@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import models
 from database import engine
-from router import student , faculty , teams, team_get , profile_update
+from router import student , faculty , teams, team_get , profile_update, projects
 
 app = FastAPI()
 
@@ -12,3 +12,4 @@ app.include_router(faculty.router)
 app.include_router(teams.router)
 app.include_router(team_get.router)
 app.include_router(profile_update.router)
+app.include_router(projects.router)
