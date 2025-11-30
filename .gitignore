@@ -7,9 +7,17 @@ frontend/.DS_Store
 
 ### Python & Backend
 backend/venv/
+venv/
+env/
+ENV/
 backend/__pycache__/
 backend/.env
 backend/.DS_Store
+
+### Database / Cache
+*.db
+__pycache__/
+*.pyc
 
 ### General
 .DS_Store

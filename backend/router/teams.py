@@ -47,6 +47,19 @@ class TeamOut(BaseModel):
         orm_mode = True
 
 
+CLUSTER_PARENT_MAP = {
+    "AI": "CS", "CD": "CS", "CS": "CS", "CY": "CS", "IS": "CS",
+    "EC": "EC", "EE": "EC", "EI": "EC", "ET": "EC",
+    "AS": "ME", "IM": "ME", "ME": "ME",
+    "CV": "CV", "BT": "CV", "CH": "CV",
+}
+
+def normalize_cluster(code: str | None) -> str:
+    if not code:
+        return ""
+    return CLUSTER_PARENT_MAP.get(code.upper(), code.upper())
+
+
 @router.post("/form", response_model=TeamOut, status_code=status.HTTP_201_CREATED)
 def form_team(payload: TeamCreateRequest, db: DB):
     member_ids = payload.member_ids
@@ -62,22 +75,47 @@ def form_team(payload: TeamCreateRequest, db: DB):
         missing = [sid for sid in member_ids if sid not in found_ids]
         raise HTTPException(status_code=404, detail=f"Student(s) not found: {missing}")
 
-    # 3) all from same cluster?
-    clusters = {s.cluster for s in students}
-    if len(clusters) != 1:
-        raise HTTPException(status_code=400, detail=f"All members must be from the same cluster. Clusters found: {clusters}")
-    team_cluster = clusters.pop()
-
-    # 4) branch diversity (department) -> need at least 3 distinct departments
-    departments = [s.department or "" for s in students]
-    distinct_depts = set(departments)
-    # remove empty dept entries if any (consider them as one dept if needed)
-    distinct_depts = {d for d in distinct_depts if d}
-    if len(distinct_depts) < 3:
+    # 3) all from same parent cluster? (CS / EC / ME / CV)
+    normalized_clusters = {normalize_cluster(s.cluster) for s in students}
+    if len(normalized_clusters) != 1:
         raise HTTPException(
             status_code=400,
-            detail=f"Team must include at least 3 different branches (departments). Found: {sorted(list(distinct_depts))}"
+            detail=f"All members must belong to the same parent cluster (CS / EC / ME / CV). "
+                   f"Clusters found: {sorted(list(normalized_clusters))}"
         )
+    team_cluster = normalized_clusters.pop()
+
+    # 4) branch diversity (department) -> validate distribution patterns
+    from collections import Counter
+    departments = [s.department for s in students if s.department]
+    dept_counter = Counter(departments)
+    team_size = len(member_ids)
+    
+    if team_size == 4:
+        counts = sorted(dept_counter.values(), reverse=True)
+        # Allowed: 2+2, 2+1+1
+        valid_4 = (
+            counts == [2, 2] or
+            counts == [2, 1, 1]
+        )
+        if not valid_4:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid branch distribution for 4-member team. Allowed: 2+2 or 2+1+1. Found: {dept_counter}"
+            )
+    elif team_size == 5:
+        counts = sorted(dept_counter.values(), reverse=True)
+        # Allowed: 3+2, 3+1+1, 2+2+1
+        valid_5 = (
+            counts == [3, 2] or
+            counts == [3, 1, 1] or
+            counts == [2, 2, 1]
+        )
+        if not valid_5:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid branch distribution for 5-member team. Allowed: 3+2, 3+1+1, or 2+2+1. Found: {dept_counter}"
+            )
 
     # 5) ensure students are not already in an active team
     # We'll check team_members join to teams with status 'active'
@@ -85,12 +123,17 @@ def form_team(payload: TeamCreateRequest, db: DB):
         db.query(TeamMembers)
           .join(Teams, TeamMembers.team_id == Teams.id)
           .filter(TeamMembers.student_id.in_(member_ids))
-          .filter(Teams.status == "active")
+          .filter(func.lower(Teams.status) == "active")
           .all()
     )
     if already:
-        taken_student_ids = [tm.student_id for tm in already]
-        raise HTTPException(status_code=400, detail=f"Some students are already in an active team: {taken_student_ids}")
+        taken_student_ids = {tm.student_id for tm in already}
+        taken_students = [s for s in students if s.id in taken_student_ids]
+        student_names = [f"{s.name} ({s.id})" if s.name else s.id for s in taken_students]
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Some students are already in an active team: {', '.join(student_names)}"
+        )
 
     # 6) create Teams row
     new_team = Teams(

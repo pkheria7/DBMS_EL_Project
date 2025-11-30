@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { Toaster } from 'react-hot-toast';
 import Home from '../pages/Home';
 import RegisterStudent from '../pages/RegisterStudent';
 import RegisterFaculty from '../pages/RegisterFaculty';
+import TeamForm from '../pages/TeamForm';
+import SubmitProject from '../pages/SubmitProject';
 
 const App = () => {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
@@ -49,6 +52,10 @@ const App = () => {
         return <RegisterStudent />;
       case '/register-faculty':
         return <RegisterFaculty />;
+      case '/form-team':
+        return <TeamForm />;
+      case '/submit-project':
+        return <SubmitProject />;
       case '/':
       default:
         return <Home />;
@@ -56,9 +63,12 @@ const App = () => {
   };
 
   return (
-    <div>
-      {renderPage()}
-    </div>
+    <>
+      <Toaster position="top-center" />
+      <div>
+        {renderPage()}
+      </div>
+    </>
   );
 };
 
