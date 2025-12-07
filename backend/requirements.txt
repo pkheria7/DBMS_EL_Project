@@ -11,4 +11,7 @@ psycopg2-binary
 numpy
 scikit-learn
 requests
+qdrant-client
+sentence-transformers
+torch
 

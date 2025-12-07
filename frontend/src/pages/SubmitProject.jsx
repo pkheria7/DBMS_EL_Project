@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import client from '../api/client';
 import Navbar from '../components/Navbar';
+import SimilarProjects from '../components/SimilarProjects';
 import theme from '../theme';
 import toast from 'react-hot-toast';
 
@@ -352,6 +353,15 @@ const SubmitProject = () => {
                 <option value="2025">2025</option>
                 <option value="2026">2026</option>
               </select>
+            </div>
+
+            {/* Similar Projects Section */}
+            <div style={{ gridColumn: '1 / -1' }}>
+              <SimilarProjects
+                title={formData.title}
+                description={formData.description}
+                domain={formData.domain}
+              />
             </div>
 
             {/* Submit Button */}
