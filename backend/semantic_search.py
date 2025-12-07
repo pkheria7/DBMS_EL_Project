@@ -77,6 +77,7 @@ class SemanticSearch:
                 "similarity_score": result.score
             }
             for result in results
+            if result.payload is not None
         ]
     
     def delete_project(self, project_id: int):
