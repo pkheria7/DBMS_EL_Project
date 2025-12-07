@@ -1,12 +1,12 @@
 # app/teams.py
 from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from database import SessionLocal
 from models import Students, Teams, TeamMembers
+from schemas import TeamCreate, TeamOut, StudentBrief
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
@@ -19,32 +19,6 @@ def get_db():
         db.close()
 
 DB = Annotated[Session, Depends(get_db)]
-
-# Request payload
-class TeamCreateRequest(BaseModel):
-    teamname: str | None = Field(None, example="Alpha Squad")
-    member_ids: List[str] = Field(..., min_items=4, max_items=5, example=["stu001","stu002","stu003","stu004"])
-
-# Response schemas
-class StudentBrief(BaseModel):
-    id: str
-    name: str | None
-    email: str | None
-    department: str | None
-    cluster: str | None
-
-    class Config:
-        orm_mode = True
-
-class TeamOut(BaseModel):
-    id: int
-    teamname: str | None
-    cluster: str | None
-    status: str
-    members: List[StudentBrief]
-
-    class Config:
-        orm_mode = True
 
 
 CLUSTER_PARENT_MAP = {
@@ -61,7 +35,7 @@ def normalize_cluster(code: str | None) -> str:
 
 
 @router.post("/form", response_model=TeamOut, status_code=status.HTTP_201_CREATED)
-def form_team(payload: TeamCreateRequest, db: DB):
+def form_team(payload: TeamCreate, db: DB):
     member_ids = payload.member_ids
 
     # 1) size enforced by Pydantic (4-5) but double-check
@@ -161,7 +135,7 @@ def form_team(payload: TeamCreateRequest, db: DB):
 
     # build response members list
     members_out = [
-        StudentBrief.from_orm(s) for s in students
+        StudentBrief.model_validate(s) for s in students
     ]
 
     return TeamOut(

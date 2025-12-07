@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from database import SessionLocal
 from models import Teams, TeamMembers, Students
+from schemas import TeamOut, StudentBrief
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
@@ -16,30 +17,6 @@ def get_db():
         db.close()
 
 DB = Annotated[Session, Depends(get_db)]
-
-# ----------- Pydantic Schemas -----------
-
-from pydantic import BaseModel
-
-class StudentBrief(BaseModel):
-    id: str
-    name: str | None
-    email: str | None
-    department: str | None
-    cluster: str | None
-
-    # Pydantic v2: allow from_orm/from_attributes
-    model_config = {"from_attributes": True}
-
-
-class TeamOut(BaseModel):
-    id: int
-    teamname: str | None
-    cluster: str | None
-    status: str
-    members: list[StudentBrief]
-
-    model_config = {"from_attributes": True}
 
 
 # ----------- GET all teams -----------
@@ -58,7 +35,7 @@ def get_all_teams(db: DB):
         for link in member_links:
             student = db.query(Students).filter(Students.id == link.student_id).first()
             if student:
-                students.append(StudentBrief.from_orm(student))
+                students.append(StudentBrief.model_validate(student))
 
         output.append(
             TeamOut(

@@ -1,11 +1,11 @@
 # app/profiles.py
 from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
 from models import Students, Faculty
+from schemas import StudentUpdate, FacultyUpdate, StudentResponse, FacultyOut
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -20,62 +20,8 @@ def get_db():
 DB = Annotated[Session, Depends(get_db)]
 
 
-# ---- Pydantic schemas ----
-class StudentUpdate(BaseModel):
-    usn: Optional[str] = None
-    name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    department: Optional[str] = None
-    cluster: Optional[str] = None
-    semester: Optional[str] = None
-    skills: Optional[str] = None
-    resumelink: Optional[str] = Field(
-        None,
-        example="/mnt/data/WhatsApp Image 2025-11-16 at 11.31.22 PM.jpeg"
-    )
-    githublink: Optional[str] = None
-
-
-class FacultyUpdate(BaseModel):
-    facultyid: Optional[str] = None
-    name: Optional[str] = None
-    department: Optional[str] = None
-    email: Optional[EmailStr] = None
-    profile_pic: Optional[str] = Field(
-        None,
-        example="/mnt/data/WhatsApp Image 2025-11-16 at 11.31.22 PM.jpeg"
-    )
-
-
-# Response schemas (Pydantic v2 compatible)
-class StudentOut(BaseModel):
-    id: str
-    usn: Optional[str]
-    name: Optional[str]
-    email: Optional[EmailStr]
-    department: Optional[str]
-    cluster: Optional[str]
-    semester: Optional[str]
-    skills: Optional[str]
-    resumelink: Optional[str]
-    githublink: Optional[str]
-
-    model_config = {"from_attributes": True}  # allows model_validate/from_orm in pydantic v2
-
-
-class FacultyOut(BaseModel):
-    id: str
-    facultyid: Optional[str]
-    name: Optional[str]
-    department: Optional[str]
-    email: Optional[EmailStr]
-    profile_pic: Optional[str]
-
-    model_config = {"from_attributes": True}
-
-
 # ---- PUT endpoints ----
-@router.put("/students/{student_id}", response_model=StudentOut)
+@router.put("/students/{student_id}", response_model=StudentResponse)
 def update_student(student_id: str, payload: StudentUpdate, db: DB):
     student = db.query(Students).filter(Students.id == student_id).first()
     if not student:
@@ -100,7 +46,7 @@ def update_student(student_id: str, payload: StudentUpdate, db: DB):
         db.rollback()
         raise HTTPException(status_code=500, detail="Database error updating student.") from e
 
-    return StudentOut.model_validate(student)
+    return StudentResponse.model_validate(student)
 
 
 @router.put("/faculty/{faculty_id}", response_model=FacultyOut)
