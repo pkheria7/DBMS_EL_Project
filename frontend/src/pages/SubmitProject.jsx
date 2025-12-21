@@ -31,18 +31,41 @@ const SubmitProject = () => {
   useEffect(() => {
     const fetchTeams = async () => {
       try {
-        const response = await client.get('/teams/');
-        setTeams(response.data || []);
+        // Get the logged-in student's USN
+        const userId = localStorage.getItem('userId');
+        if (!userId) {
+          toast.error('User not authenticated');
+          navigate('/login');
+          return;
+        }
+
+        // Fetch only the student's team
+        const response = await client.get(`/teams/my-team?usn=${encodeURIComponent(userId)}`);
+        const fetchedTeams = response.data || [];
+        setTeams(fetchedTeams);
+        
+        // Auto-select the team if there's exactly one team
+        if (fetchedTeams.length === 1) {
+          setFormData(prev => ({
+            ...prev,
+            team_id: fetchedTeams[0].team_id.toString()
+          }));
+        }
       } catch (error) {
-        toast.error('Failed to load teams');
-        console.error('Error fetching teams:', error);
+        // If student has no team, response will be empty array (not an error)
+        if (error.response?.status === 404 || error.response?.status === 400) {
+          setTeams([]);
+        } else {
+          toast.error('Failed to load teams');
+          console.error('Error fetching teams:', error);
+        }
       } finally {
         setLoadingTeams(false);
       }
     };
 
     fetchTeams();
-  }, []);
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -182,19 +205,34 @@ const SubmitProject = () => {
                   name="team_id"
                   value={formData.team_id}
                   onChange={handleChange}
-                  disabled={loadingTeams}
+                  disabled={loadingTeams || teams.length === 0 || teams.length === 1}
                   required
                   className={`w-full px-4 py-3 bg-slate-700 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base ${
                     errors.team_id ? 'border-red-500' : 'border-slate-600'
-                  } ${loadingTeams ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  } ${(loadingTeams || teams.length === 0 || teams.length === 1) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                 >
-                  <option value="" className="bg-slate-700">{loadingTeams ? 'Loading teams...' : 'Select a team'}</option>
-                  {teams.map((team) => (
-                    <option key={team.id} value={team.id} className="bg-slate-700">
-                      {team.teamname || `Team ${team.id}`} {team.cluster ? `(${team.cluster})` : ''}
+                  {loadingTeams ? (
+                    <option value="" className="bg-slate-700">Loading teams...</option>
+                  ) : teams.length === 0 ? (
+                    <option value="" className="bg-slate-700">No team assigned</option>
+                  ) : teams.length === 1 ? (
+                    <option value={teams[0].team_id} className="bg-slate-700">
+                      {teams[0].team_name || `Team ${teams[0].team_id}`}
                     </option>
-                  ))}
+                  ) : (
+                    <>
+                      <option value="" className="bg-slate-700">Select a team</option>
+                      {teams.map((team) => (
+                        <option key={team.team_id} value={team.team_id} className="bg-slate-700">
+                          {team.team_name || `Team ${team.team_id}`}
+                        </option>
+                      ))}
+                    </>
+                  )}
                 </select>
+                {teams.length === 1 && !loadingTeams && (
+                  <div className="text-slate-400 text-sm mt-1">Your team has been automatically selected</div>
+                )}
                 {errors.team_id && <div className="text-red-400 text-sm mt-1">{errors.team_id}</div>}
               </div>
 

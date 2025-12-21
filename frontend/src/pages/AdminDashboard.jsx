@@ -1,14 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, LogOut, UserCheck, ArrowLeft } from 'lucide-react';
+import { Users, GraduationCap, LogOut, UserCheck, ArrowLeft, Mail, Phone, Briefcase, Building2, Search, X, Check } from 'lucide-react';
 import client from '../api/client';
+import toast from 'react-hot-toast';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [teams, setTeams] = useState([]);
   const [isLoadingTeams, setIsLoadingTeams] = useState(false);
+  const [faculty, setFaculty] = useState([]);
+  const [isLoadingFaculty, setIsLoadingFaculty] = useState(false);
   const [showTeams, setShowTeams] = useState(false);
   const [showFaculty, setShowFaculty] = useState(false);
+  
+  // Faculty assignment modal state
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState(null);
+  const [modalFaculty, setModalFaculty] = useState([]);
+  const [isLoadingModalFaculty, setIsLoadingModalFaculty] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFacultyIds, setSelectedFacultyIds] = useState([]);
+  const [isAssigning, setIsAssigning] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -39,10 +51,19 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleViewFaculty = () => {
+  const handleViewFaculty = async () => {
     setShowFaculty(true);
     setShowTeams(false);
-    // Dummy function - backend endpoint not created yet
+    setIsLoadingFaculty(true);
+    try {
+      const response = await client.get('/faculty/');
+      setFaculty(response.data || []);
+    } catch (error) {
+      console.error('Error fetching faculty:', error);
+      setFaculty([]);
+    } finally {
+      setIsLoadingFaculty(false);
+    }
   };
 
   const handleBackToMain = () => {
@@ -50,9 +71,124 @@ const AdminDashboard = () => {
     setShowFaculty(false);
   };
 
-  const handleAssignFaculty = (teamId) => {
-    // Dummy function - backend endpoint not created yet
-    console.log('Assign faculty to team:', teamId);
+  const handleAssignFaculty = async (teamId) => {
+    const team = teams.find(t => t.team_id === teamId);
+    if (!team) return;
+    
+    setSelectedTeam(team);
+    setShowAssignModal(true);
+    setSelectedFacultyIds([]);
+    setSearchQuery('');
+    setIsLoadingModalFaculty(true);
+    
+    try {
+      // Load all faculty initially
+      const response = await client.get('/faculty/');
+      setModalFaculty(response.data || []);
+    } catch (error) {
+      console.error('Error fetching faculty:', error);
+      toast.error('Failed to load faculty');
+      setModalFaculty([]);
+    } finally {
+      setIsLoadingModalFaculty(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowAssignModal(false);
+    setSelectedTeam(null);
+    setModalFaculty([]);
+    setSelectedFacultyIds([]);
+    setSearchQuery('');
+  };
+
+  const handleSearchFaculty = async (query) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
+      // If search is empty, load all faculty
+      setIsLoadingModalFaculty(true);
+      try {
+        const response = await client.get('/faculty/');
+        setModalFaculty(response.data || []);
+      } catch (error) {
+        console.error('Error fetching faculty:', error);
+        setModalFaculty([]);
+      } finally {
+        setIsLoadingModalFaculty(false);
+      }
+      return;
+    }
+
+    setIsLoadingModalFaculty(true);
+    try {
+      const response = await client.get(`/faculty/search?query=${encodeURIComponent(query)}`);
+      setModalFaculty(response.data || []);
+    } catch (error) {
+      if (error.response?.status === 404) {
+        // No results found
+        setModalFaculty([]);
+      } else {
+        console.error('Error searching faculty:', error);
+        toast.error('Failed to search faculty');
+        setModalFaculty([]);
+      }
+    } finally {
+      setIsLoadingModalFaculty(false);
+    }
+  };
+
+  const handleToggleFacultySelection = (facultyId) => {
+    setSelectedFacultyIds(prev => {
+      if (prev.includes(facultyId)) {
+        // Deselect
+        return prev.filter(id => id !== facultyId);
+      } else {
+        // Select (max 2)
+        if (prev.length >= 2) {
+          toast.error('Maximum 2 faculty members can be assigned per team');
+          return prev;
+        }
+        return [...prev, facultyId];
+      }
+    });
+  };
+
+  const handleConfirmAssignment = async () => {
+    if (selectedFacultyIds.length !== 2) {
+      toast.error('Please select exactly 2 faculty members');
+      return;
+    }
+
+    if (!selectedTeam) return;
+
+    setIsAssigning(true);
+    try {
+      // Get faculty names from selected IDs
+      const selectedFaculty = modalFaculty.filter(f => selectedFacultyIds.includes(f.faculty_id));
+      const facultyNames = selectedFaculty.map(f => f.name);
+
+      // Call the assignment endpoint
+      const response = await client.post('/mentors/assign', {
+        team_name: selectedTeam.team_name,
+        faculty_names: facultyNames
+      });
+
+      toast.success('Faculty assigned successfully!');
+      handleCloseModal();
+      
+      // Optionally refresh teams to show updated assignments
+      // You could add mentor info to team cards here if needed
+    } catch (error) {
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
+      } else {
+        toast.error('Failed to assign faculty');
+      }
+      console.error('Error assigning faculty:', error);
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   return (
@@ -145,7 +281,7 @@ const AdminDashboard = () => {
           </>
         ) : showFaculty ? (
           <>
-            {/* Faculty List View (Dummy) */}
+            {/* Faculty List View */}
             <div className="text-center mb-8">
               <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
                 <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400">
@@ -153,15 +289,76 @@ const AdminDashboard = () => {
                 </span>
               </h1>
               <p className="text-lg text-slate-300">
-                Backend endpoint not yet created
+                View and manage all registered faculty members
               </p>
             </div>
-            <div className="bg-slate-800 rounded-2xl border border-slate-700 p-12 text-center">
-              <Users className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-              <p className="text-slate-300 text-lg">
-                Faculty list will be displayed here once the backend endpoint is created.
-              </p>
-            </div>
+
+            {isLoadingFaculty ? (
+              <div className="flex flex-col items-center justify-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+                <p className="text-white text-lg">Loading faculty...</p>
+              </div>
+            ) : faculty.length === 0 ? (
+              <div className="bg-slate-800 rounded-2xl border border-slate-700 p-12 text-center">
+                <Users className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+                <p className="text-slate-300 text-lg">
+                  No faculty members found in the system.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {faculty.map((facultyMember) => (
+                  <div
+                    key={facultyMember.faculty_id}
+                    className="group bg-slate-800 border border-slate-700 rounded-2xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-slate-600 relative overflow-hidden"
+                  >
+                    {/* Faculty Name */}
+                    <h3 className="text-xl font-bold text-white mb-4 group-hover:text-blue-400 transition-colors">
+                      {facultyMember.name}
+                    </h3>
+
+                    {/* Designation */}
+                    {facultyMember.designation && (
+                      <div className="flex items-center gap-2 text-sm mb-3">
+                        <Briefcase className="w-4 h-4 text-slate-400" />
+                        <span className="text-slate-300">{facultyMember.designation}</span>
+                      </div>
+                    )}
+
+                    {/* Department */}
+                    <div className="flex items-center gap-2 text-sm mb-3">
+                      <Building2 className="w-4 h-4 text-slate-400" />
+                      <span className="text-slate-400 font-medium">Department:</span>
+                      <span className="text-slate-200">{facultyMember.dept_id || 'N/A'}</span>
+                    </div>
+
+                    {/* Email */}
+                    <div className="flex items-center gap-2 text-sm mb-3">
+                      <Mail className="w-4 h-4 text-slate-400" />
+                      <span className="text-slate-300 truncate">{facultyMember.email}</span>
+                    </div>
+
+                    {/* Phone Number */}
+                    {facultyMember.ph_no && (
+                      <div className="flex items-center gap-2 text-sm mb-4">
+                        <Phone className="w-4 h-4 text-slate-400" />
+                        <span className="text-slate-300">{facultyMember.ph_no}</span>
+                      </div>
+                    )}
+
+                    {/* Faculty ID Badge */}
+                    <div className="mt-4 pt-4 border-t border-slate-700">
+                      <span className="text-xs text-slate-500 font-medium">
+                        ID: {facultyMember.faculty_id}
+                      </span>
+                    </div>
+
+                    {/* Hover effect overlay */}
+                    <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -252,6 +449,146 @@ const AdminDashboard = () => {
           </>
         )}
       </div>
+
+      {/* Faculty Assignment Modal */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-700">
+              <div>
+                <h2 className="text-2xl font-bold text-white">Assign Faculty Mentors</h2>
+                <p className="text-slate-400 text-sm mt-1">
+                  {selectedTeam && `Team: ${selectedTeam.team_name}`}
+                </p>
+              </div>
+              <button
+                onClick={handleCloseModal}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            {/* Search Bar */}
+            <div className="p-6 border-b border-slate-700">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, designation, or ID..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchFaculty(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+              </div>
+              <div className="mt-3 flex items-center gap-2 text-sm">
+                <span className="text-slate-400">Selected:</span>
+                <span className={`font-medium ${selectedFacultyIds.length === 2 ? 'text-green-400' : 'text-slate-300'}`}>
+                  {selectedFacultyIds.length}/2
+                </span>
+                {selectedFacultyIds.length === 2 && (
+                  <span className="text-green-400 text-xs">(Maximum reached)</span>
+                )}
+              </div>
+            </div>
+
+            {/* Faculty List */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {isLoadingModalFaculty ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-4"></div>
+                  <p className="text-slate-400">Loading faculty...</p>
+                </div>
+              ) : modalFaculty.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <Users className="w-12 h-12 text-slate-600 mb-4" />
+                  <p className="text-slate-400">
+                    {searchQuery ? 'No faculty found matching your search' : 'No faculty available'}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {modalFaculty.map((facultyMember) => {
+                    const isSelected = selectedFacultyIds.includes(facultyMember.faculty_id);
+                    const isDisabled = !isSelected && selectedFacultyIds.length >= 2;
+                    
+                    return (
+                      <div
+                        key={facultyMember.faculty_id}
+                        onClick={() => !isDisabled && handleToggleFacultySelection(facultyMember.faculty_id)}
+                        className={`
+                          p-4 rounded-lg border transition-all cursor-pointer
+                          ${isSelected 
+                            ? 'bg-indigo-500/20 border-indigo-500' 
+                            : isDisabled
+                            ? 'bg-slate-700/50 border-slate-600 opacity-50 cursor-not-allowed'
+                            : 'bg-slate-700 border-slate-600 hover:border-slate-500 hover:bg-slate-600'
+                          }
+                        `}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={`
+                            w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 mt-0.5
+                            ${isSelected 
+                              ? 'bg-indigo-500 border-indigo-500' 
+                              : 'border-slate-500'
+                            }
+                          `}>
+                            {isSelected && <Check className="w-4 h-4 text-white" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-semibold text-white">{facultyMember.name}</h3>
+                              {facultyMember.designation && (
+                                <span className="text-xs text-slate-400">• {facultyMember.designation}</span>
+                              )}
+                            </div>
+                            <div className="space-y-1 text-sm">
+                              <div className="flex items-center gap-2 text-slate-300">
+                                <Mail className="w-3 h-3 text-slate-400" />
+                                <span className="truncate">{facultyMember.email}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-slate-300">
+                                <Building2 className="w-3 h-3 text-slate-400" />
+                                <span>{facultyMember.dept_id || 'N/A'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-4 p-6 border-t border-slate-700">
+              <button
+                onClick={handleCloseModal}
+                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                disabled={isAssigning}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmAssignment}
+                disabled={selectedFacultyIds.length !== 2 || isAssigning}
+                className={`
+                  px-6 py-2 rounded-lg font-medium transition-all
+                  ${selectedFacultyIds.length === 2 && !isAssigning
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl'
+                    : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                  }
+                `}
+              >
+                {isAssigning ? 'Assigning...' : 'Assign Faculty'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -50,6 +50,16 @@ class TeamOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+from models import Department  # Import the Department model
+
+def parent_cluster(dept_id: str, db: Session) -> str | None:
+    """
+    Fetch the cluster_id for a given dept_id from the Department table.
+    """
+    department = db.query(Department).filter(Department.dept_id == dept_id).first()
+    if department:
+        return department.cluster_id
+    return None
 
 # ============================================================================
 # FORM TEAM
@@ -91,7 +101,23 @@ def form_team(payload: TeamCreate, db: DB):
             detail=f"These students are already in a team: {already_in_team}"
         )
 
-    # 4️⃣ Create team
+    # 4️⃣ Ensure all students are from the same semester
+    semesters = {s.sem for s in students}
+    if len(semesters) > 1:
+        raise HTTPException(
+            status_code=400,
+            detail="All team members must be from the same semester."
+        )
+
+    # 5️⃣ Ensure all students are from the same cluster
+    from_cluster = {parent_cluster(s.dept_id) for s in students}
+    if len(from_cluster) > 1:
+        raise HTTPException(
+            status_code=400,
+            detail="All team members must be from the same cluster."
+        )
+
+    # 6️⃣ Create team
     new_team = Team(
         team_name=payload.team_name,
         status="active"
@@ -101,7 +127,7 @@ def form_team(payload: TeamCreate, db: DB):
         db.add(new_team)
         db.flush()  # get team_id
 
-        # 5️⃣ Assign students to team
+        # 7️⃣ Assign students to team
         for student in students:
             student.team_id = new_team.team_id
 

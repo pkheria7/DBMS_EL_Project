@@ -101,3 +101,57 @@ def get_all_teams(db: DB):
         )
 
     return result
+
+
+# ============================================================================
+# GET STUDENT'S TEAM (for submit project dropdown)
+# ============================================================================
+
+@router.get("/my-team", response_model=List[TeamOut])
+def get_student_team(usn: str, db: DB):
+    """
+    Get the team that a student belongs to.
+    Returns ONLY the student's team. Returns empty list if student has no team.
+    This endpoint is used by the Submit Project page to show only the student's team.
+    """
+    # Find the student by USN
+    student = db.query(Student).filter(Student.usn == usn).first()
+    
+    if not student:
+        return []
+    
+    # If student has no team_id, return empty list
+    if not student.team_id:
+        return []
+    
+    # Get the student's team
+    team = db.query(Team).filter(Team.team_id == student.team_id).first()
+    
+    if not team:
+        return []
+    
+    # Get all members of this team
+    members = db.query(Student).filter(
+        Student.team_id == team.team_id
+    ).all()
+    
+    # Derive cluster from members' dept_id
+    cluster = None
+    if members:
+        first_dept_id = members[0].dept_id
+        if first_dept_id:
+            if first_dept_id in VALID_CLUSTERS:
+                cluster = first_dept_id
+            else:
+                cluster = CLUSTER_PARENT_MAP.get(first_dept_id)
+    
+    # Return list with ONLY the student's team
+    return [
+        TeamOut(
+            team_id=team.team_id,
+            team_name=team.team_name or f"Team {team.team_id}",
+            status=team.status,
+            cluster=cluster,
+            members=[StudentBrief(usn=m.usn, name=m.name, email=m.email) for m in members]
+        )
+    ]

@@ -177,3 +177,41 @@ def get_all_students(db: DB):
         )
 
     return result
+
+
+
+@router.get(
+    "/search",
+    response_model=List[StudentOut],
+    summary="Search students by USN, name, or email"
+)
+def search_students(query: str, db: Session = Depends(get_db)):
+
+    q = f"%{query.strip().lower()}%"
+
+    students = db.query(Student).filter(
+        ((Student.usn.ilike(q)) |
+         (Student.name.ilike(q)) |
+         (Student.email.ilike(q))) &
+        (Student.team_id == None)
+    ).all()
+
+    if not students:
+        raise HTTPException(
+            status_code=404,
+            detail="No matching students found."
+        )
+
+    result = []
+    for stu in students:
+        result.append(
+            StudentOut(
+                usn=stu.usn,
+                name=stu.name,
+                email=stu.email,
+                dept_id=stu.dept_id,
+                is_in_active_team=stu.team_id in active_team_ids
+            )
+        )
+
+    return result
