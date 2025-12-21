@@ -1,135 +1,157 @@
 # models.py
-from database import Base
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import (
+    Column,
+    String,
+    Integer,
+    ForeignKey,
+    Text,
+    Table
+)
 from sqlalchemy.orm import relationship
+from database import Base
 
 
-# -----------------------------
-# TeamMembers association table (explicit model)
-# -----------------------------
-class TeamMembers(Base):
-    __tablename__ = "team_members"
+# ----------------------------
+# ASSOCIATION TABLES
+# ----------------------------
 
-    id = Column(Integer, primary_key=True, index=True)
-    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
-    student_id = Column(String, ForeignKey("students.id", ondelete="CASCADE"), nullable=False)
+mentors_table = Table(
+    "mentors",
+    Base.metadata,
+    Column("team_id", ForeignKey("team.team_id"), primary_key=True),
+    Column("faculty_id", ForeignKey("faculty.faculty_id"), primary_key=True),
+)
 
-    # relationships for the association object
-    team = relationship("Teams", back_populates="members")
-    student = relationship("Students", back_populates="members")
+bookmarks_table = Table(
+    "bookmarks",
+    Base.metadata,
+    Column("team_id", ForeignKey("team.team_id"), primary_key=True),
+    Column("archive_id", ForeignKey("archive.archive_id"), primary_key=True),
+)
 
 
-# -----------------------------
-# Students Table
-# -----------------------------
-class Students(Base):
-    __tablename__ = "students"
+# ----------------------------
+# CORE TABLES
+# ----------------------------
 
-    id = Column(String, primary_key=True)
-    usn = Column(String)
-    name = Column(String)
-    email = Column(String)
-    department = Column(String)
-    cluster = Column(String)
-    semester = Column(String)
-    skills = Column(String)
-    resumelink = Column(String)
-    githublink = Column(String)
+class Cluster(Base):
+    __tablename__ = "cluster"
 
-    # association objects (TeamMembers)
-    members = relationship("TeamMembers", back_populates="student", cascade="all, delete-orphan")
+    cluster_id = Column(Integer, primary_key=True, index=True)
+    cluster_name = Column(String(100), nullable=False)
 
-    # convenience many-to-many relationship to Teams via the association table
-    teams = relationship(
-        "Teams",
-        secondary="team_members",
-        back_populates="students",
-        viewonly=True,  # set to False if you want to add to the secondary from Students side
+    departments = relationship("Department", back_populates="cluster")
+
+
+
+
+
+class Team(Base):
+    __tablename__ = "team"
+
+    team_id = Column(Integer, primary_key=True, index=True)
+    team_name = Column(String(100), nullable=False)
+    status = Column(String(50))
+
+    students = relationship("Student", back_populates="team")
+    project = relationship("Project", back_populates="team", uselist=False)
+    mentors = relationship(
+        "Faculty",
+        secondary=mentors_table,
+        back_populates="mentored_teams",
+    )
+    bookmarks = relationship(
+        "Archive",
+        secondary=bookmarks_table,
+        back_populates="bookmarked_by_teams",
     )
 
 
-# -----------------------------
-# Teams Table
-# -----------------------------
-class Teams(Base):
-    __tablename__ = "teams"
+class Student(Base):
+    __tablename__ = "student"
 
-    id = Column(Integer, primary_key=True, index=True)
-    teamid = Column(Integer, unique=True, nullable=True)
-    teamname = Column(String, nullable=True)
-    cluster = Column(String, nullable=True)
-    semester = Column(String, nullable=True)
-    status = Column(String, default="active")  # e.g. active/inactive
+    usn = Column(String(20), primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    ph_no = Column(String(15))
+    sem = Column(Integer)
+    github = Column(String(255))
+    resume = Column(String(255))
 
-    # FK to Faculty (mentor)
-    mentor_id = Column(String, ForeignKey("faculty.id"), nullable=True)
+    dept_id = Column(String, ForeignKey("department.dept_id"))
+    team_id = Column(Integer, ForeignKey("team.team_id"))
 
-    # association objects
-    members = relationship("TeamMembers", back_populates="team", cascade="all, delete-orphan")
-
-    # convenience many-to-many relationship to Students via the association table
-    students = relationship(
-        "Students",
-        secondary="team_members",
-        back_populates="teams",
-        viewonly=True,
-    )
-
-    # relationship to mentor (Faculty)
-    mentor = relationship("Faculty", back_populates="teams")
-
-    # relationship to projects
-    projects = relationship("Projects", back_populates="team", cascade="all, delete-orphan")
+    department = relationship("Department", back_populates="students")
+    team = relationship("Team", back_populates="students")
+    skills = relationship("Skill", back_populates="student", cascade="all, delete")
 
 
-# -----------------------------
-# Faculty Table
-# -----------------------------
+class Skill(Base):
+    __tablename__ = "skills"
+
+    usn = Column(String(20), ForeignKey("student.usn"), primary_key=True)
+    skill = Column(String(100), primary_key=True)
+
+    student = relationship("Student", back_populates="skills")
+
+
+class Department(Base):
+    __tablename__ = "department"
+
+    dept_id = Column(String, primary_key=True, index=True)
+    dept_name = Column(String(100), nullable=False)
+
+    cluster_id = Column(Integer, ForeignKey("cluster.cluster_id"))
+
+    cluster = relationship("Cluster", back_populates="departments")
+    students = relationship("Student", back_populates="department")
+    faculty = relationship("Faculty", back_populates="department")
+
 class Faculty(Base):
     __tablename__ = "faculty"
 
-    id = Column(String, primary_key=True)
-    facultyid = Column(String)
-    name = Column(String)
-    department = Column(String)
-    email = Column(String)
+    faculty_id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    email = Column(String(100), unique=True, nullable=False)
+    ph_no = Column(String(15))
+    designation = Column(String(50))
 
-    # teams mentored by this faculty
-    teams = relationship("Teams", back_populates="mentor")
+    dept_id = Column(String, ForeignKey("department.dept_id"))
 
-
-# -----------------------------
-# Projects Table
-# -----------------------------
-class Projects(Base):
-    __tablename__ = "projects"
-
-    id = Column(Integer, primary_key=True)
-    projectid = Column(Integer)
-    team_id = Column(Integer, ForeignKey("teams.id"))
-    title = Column(String)
-    description = Column(String)
-    domain = Column(String)
-    similarityscore = Column(Float)
-    demovideolink = Column(String)
-    year = Column(String)
-
-    team = relationship("Teams", back_populates="projects")
-    archives = relationship("Archives", back_populates="project", cascade="all, delete-orphan")
+    department = relationship("Department", back_populates="faculty")
+    mentored_teams = relationship(
+        "Team",
+        secondary=mentors_table,
+        back_populates="mentors",
+    )
 
 
-# -----------------------------
-# Archives Table
-# -----------------------------
-class Archives(Base):
-    __tablename__ = "archives"
+class Project(Base):
+    __tablename__ = "project"
 
-    id = Column(Integer, primary_key=True)
-    archiveid = Column(Integer)
-    projecttitle = Column(String)
-    domain = Column(String)
-    year = Column(String)
-    contactinfo = Column(String)
+    project_id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    abstract = Column(Text)
+    domain = Column(String(100))
+    report_link = Column(String(255))
+    marks = Column(Integer)
 
-    project_id = Column(Integer, ForeignKey("projects.id"))
-    project = relationship("Projects", back_populates="archives")
+    team_id = Column(Integer, ForeignKey("team.team_id"), unique=True)
+
+    team = relationship("Team", back_populates="project")
+
+
+class Archive(Base):
+    __tablename__ = "archive"
+
+    archive_id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(200), nullable=False)
+    sem = Column(Integer)
+    abstract = Column(Text)
+    report_link = Column(String(255))
+
+    bookmarked_by_teams = relationship(
+        "Team",
+        secondary=bookmarks_table,
+        back_populates="bookmarks",
+    )

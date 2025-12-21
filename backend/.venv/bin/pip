@@ -1,4 +1,4 @@
-#!/Users/piyushkheria/Desktop/DBMS_EL_Project/EL_Website/.venv/bin/python3.12
+#!/Users/piyushkheria/Desktop/DBMS_EL_Project/backend/.venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

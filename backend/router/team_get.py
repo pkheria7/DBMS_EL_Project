@@ -1,14 +1,20 @@
+# app/teams.py
+
 from typing import Annotated, List
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 from database import SessionLocal
-from models import Teams, TeamMembers, Students
-from schemas import TeamOut, StudentBrief
+from models import Team, Student
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
-# local DB dependency
+
+# ============================================================================
+# DATABASE DEPENDENCY
+# ============================================================================
+
 def get_db():
     db = SessionLocal()
     try:
@@ -19,32 +25,49 @@ def get_db():
 DB = Annotated[Session, Depends(get_db)]
 
 
-# ----------- GET all teams -----------
+# ============================================================================
+# LOCAL PYDANTIC SCHEMAS
+# ============================================================================
+
+class StudentBrief(BaseModel):
+    usn: str
+    name: str
+    email: EmailStr
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TeamOut(BaseModel):
+    team_id: int
+    team_name: str
+    status: str
+    members: List[StudentBrief]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# GET ALL TEAMS WITH MEMBERS
+# ============================================================================
 
 @router.get("/", response_model=List[TeamOut])
 def get_all_teams(db: DB):
-    teams = db.query(Teams).all()
 
-    output = []
+    teams = db.query(Team).all()
+    result = []
 
     for team in teams:
-        # get all students via TeamMembers
-        member_links = db.query(TeamMembers).filter(TeamMembers.team_id == team.id).all()
+        members = db.query(Student).filter(
+            Student.team_id == team.team_id
+        ).all()
 
-        students = []
-        for link in member_links:
-            student = db.query(Students).filter(Students.id == link.student_id).first()
-            if student:
-                students.append(StudentBrief.model_validate(student))
-
-        output.append(
+        result.append(
             TeamOut(
-                id=team.id,
-                teamname=team.teamname,
-                cluster=team.cluster,
+                team_id=team.team_id,
+                team_name=team.team_name,
                 status=team.status,
-                members=students
+                members=members
             )
         )
 
-    return output
+    return result

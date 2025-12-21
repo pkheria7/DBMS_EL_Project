@@ -1,15 +1,20 @@
 # app/projects.py
+
 from typing import Annotated, List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, Field, ConfigDict
 
 from database import SessionLocal
-from models import Projects, Teams, Archives
-from schemas import ProjectCreate, ProjectUpdate, ProjectOut, ArchiveResponse
+from models import Project, Team, Archive
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
-# local DB dependency (keeps it simple)
+
+# ============================================================================
+# DATABASE DEPENDENCY
+# ============================================================================
+
 def get_db():
     db = SessionLocal()
     try:
@@ -20,48 +25,121 @@ def get_db():
 DB = Annotated[Session, Depends(get_db)]
 
 
-# ---------- GET all projects ----------
-@router.get("/", response_model=List[ProjectOut])
+# ============================================================================
+# PYDANTIC SCHEMAS (LOCAL ONLY)
+# ============================================================================
+
+# -------- PROJECT --------
+
+class ProjectCreate(BaseModel):
+    team_id: int = Field(..., example=1)
+    title: str
+    abstract: Optional[str] = None
+    domain: Optional[str] = None
+    report_link: Optional[str] = None
+
+
+class ProjectUpdate(BaseModel):
+    title: Optional[str] = None
+    abstract: Optional[str] = None
+    domain: Optional[str] = None
+    report_link: Optional[str] = None
+    marks: Optional[int] = None
+
+
+class ProjectResponse(BaseModel):
+    project_id: int
+    team_id: int
+    title: str
+    abstract: Optional[str]
+    domain: Optional[str]
+    report_link: Optional[str]
+    marks: Optional[int]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# -------- ARCHIVE --------
+
+class ArchiveResponse(BaseModel):
+    archive_id: int
+    title: str
+    sem: Optional[int]
+    abstract: Optional[str]
+    report_link: Optional[str]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# GET ALL PROJECTS
+# ============================================================================
+
+@router.get("/", response_model=List[ProjectResponse])
 def get_all_projects(db: DB):
-    """Get all projects."""
-    projects = db.query(Projects).all()
-    return projects
+    return db.query(Project).all()
 
 
-# ---------- GET one project ----------
-@router.get("/{project_id}", response_model=ProjectOut)
+# ============================================================================
+# GET SINGLE PROJECT
+# ============================================================================
+
+@router.get("/{project_id}", response_model=ProjectResponse)
 def get_project(project_id: int, db: DB):
-    """Get a single project by ID."""
-    project = db.query(Projects).filter(Projects.id == project_id).first()
+
+    project = db.query(Project).filter(
+        Project.project_id == project_id
+    ).first()
+
     if not project:
-        raise HTTPException(status_code=404, detail=f"Project with id {project_id} not found.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Project with id {project_id} not found."
+        )
+
     return project
 
 
-# ---------- POST endpoint ----------
-@router.post("/", response_model=ProjectOut, status_code=status.HTTP_201_CREATED)
+# ============================================================================
+# CREATE PROJECT (1 TEAM → 1 PROJECT)
+# ============================================================================
+
+@router.post(
+    "/",
+    response_model=ProjectResponse,
+    status_code=status.HTTP_201_CREATED
+)
 def add_project(payload: ProjectCreate, db: DB):
-    """Create a new project."""
-    # 1) ensure the team exists
-    team = db.query(Teams).filter(Teams.id == payload.team_id).first()
+
+    # 1. Validate team
+    team = db.query(Team).filter(
+        Team.team_id == payload.team_id
+    ).first()
+
     if not team:
-        raise HTTPException(status_code=404, detail=f"Team with id {payload.team_id} not found.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Team with id {payload.team_id} not found."
+        )
 
-    # 2) ensure the team doesn't already have a project
-    existing = db.query(Projects).filter(Projects.team_id == payload.team_id).first()
+    # 2. Enforce one-project-per-team
+    existing = db.query(Project).filter(
+        Project.team_id == payload.team_id
+    ).first()
+
     if existing:
-        raise HTTPException(status_code=400, detail="This team already has a project registered.")
+        raise HTTPException(
+            status_code=400,
+            detail="This team already has a project registered."
+        )
 
-    # 3) create project record
-    new_project = Projects(
-        projectid=payload.projectid,
+    # 3. Create project
+    new_project = Project(
         team_id=payload.team_id,
         title=payload.title,
-        description=payload.description,
+        abstract=payload.abstract,
         domain=payload.domain,
-        similarityscore=None,  # Will be computed by vector search system later
-        demovideolink=payload.demovideolink,
-        year=payload.year
+        report_link=payload.report_link
     )
 
     try:
@@ -70,75 +148,105 @@ def add_project(payload: ProjectCreate, db: DB):
         db.refresh(new_project)
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Database error while creating project.") from e
+        raise HTTPException(
+            status_code=500,
+            detail="Database error while creating project."
+        ) from e
 
     return new_project
 
 
-# ---------- PUT endpoint (Update) ----------
-@router.put("/{project_id}", response_model=ProjectOut)
-def update_project(project_id: int, payload: ProjectUpdate, db: DB):
-    """Update an existing project."""
-    project = db.query(Projects).filter(Projects.id == project_id).first()
-    if not project:
-        raise HTTPException(status_code=404, detail=f"Project with id {project_id} not found.")
+# ============================================================================
+# UPDATE PROJECT
+# ============================================================================
 
-    # Update only provided fields
+@router.put("/{project_id}", response_model=ProjectResponse)
+def update_project(project_id: int, payload: ProjectUpdate, db: DB):
+
+    project = db.query(Project).filter(
+        Project.project_id == project_id
+    ).first()
+
+    if not project:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Project with id {project_id} not found."
+        )
+
     update_data = payload.model_dump(exclude_unset=True)
-    
     for key, value in update_data.items():
         setattr(project, key, value)
 
     try:
-        db.add(project)
         db.commit()
         db.refresh(project)
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Database error while updating project.") from e
+        raise HTTPException(
+            status_code=500,
+            detail="Database error while updating project."
+        ) from e
 
     return project
 
 
-# ---------- DELETE endpoint ----------
+# ============================================================================
+# DELETE PROJECT
+# ============================================================================
+
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_project(project_id: int, db: DB):
-    """Delete a project."""
-    project = db.query(Projects).filter(Projects.id == project_id).first()
+
+    project = db.query(Project).filter(
+        Project.project_id == project_id
+    ).first()
+
     if not project:
-        raise HTTPException(status_code=404, detail=f"Project with id {project_id} not found.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Project with id {project_id} not found."
+        )
 
     try:
         db.delete(project)
         db.commit()
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Database error while deleting project.") from e
+        raise HTTPException(
+            status_code=500,
+            detail="Database error while deleting project."
+        ) from e
 
     return None
 
 
-# ---------- POST archive endpoint ----------
-@router.post("/{project_id}/archive", response_model=ArchiveResponse, status_code=status.HTTP_201_CREATED)
+# ============================================================================
+# ARCHIVE PROJECT (SNAPSHOT)
+# ============================================================================
+
+@router.post(
+    "/{project_id}/archive",
+    response_model=ArchiveResponse,
+    status_code=status.HTTP_201_CREATED
+)
 def archive_project(project_id: int, db: DB):
-    """Archive a project by creating an archive entry."""
-    # 1) Get the project
-    project = db.query(Projects).filter(Projects.id == project_id).first()
+
+    project = db.query(Project).filter(
+        Project.project_id == project_id
+    ).first()
+
     if not project:
-        raise HTTPException(status_code=404, detail=f"Project with id {project_id} not found.")
+        raise HTTPException(
+            status_code=404,
+            detail=f"Project with id {project_id} not found."
+        )
 
-    # 2) Check if already archived
-    existing_archive = db.query(Archives).filter(Archives.project_id == project_id).first()
-    if existing_archive:
-        raise HTTPException(status_code=400, detail="This project is already archived.")
-
-    # 3) Create archive entry from project data
-    new_archive = Archives(
-        project_id=project_id,
-        projecttitle=project.title,
-        domain=project.domain,
-        year=project.year,
-        contactinfo=None  # Can be updated later if needed
+    # Create snapshot archive
+    new_archive = Archive(
+        title=project.title,
+        sem=None,
+        abstract=project.abstract,
+        report_link=project.report_link
     )
 
     try:
@@ -147,6 +255,9 @@ def archive_project(project_id: int, db: DB):
         db.refresh(new_archive)
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Database error while archiving project.") from e
+        raise HTTPException(
+            status_code=500,
+            detail="Database error while archiving project."
+        ) from e
 
     return new_archive

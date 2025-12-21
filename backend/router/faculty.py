@@ -1,19 +1,23 @@
 # app/faculty.py
-from typing import Annotated
+
+from typing import Annotated, Optional, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 import bcrypt
 from datetime import datetime
 
-# adjust import paths to your project structure
 from database import SessionLocal
-from models import Faculty  # your SQLAlchemy Faculty model
-from schemas import FacultyCreate, FacultyResponse
+from models import Faculty
 from mongodb import get_users_collection
 
 router = APIRouter(prefix="/faculty", tags=["faculty"])
 
-# local get_db dependency (keeps things simple and avoids import issues)
+
+# ============================================================================
+# DATABASE DEPENDENCY
+# ============================================================================
+
 def get_db():
     db = SessionLocal()
     try:
@@ -24,56 +28,82 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 
 
-@router.post("/register", response_model=FacultyResponse, status_code=status.HTTP_201_CREATED)
+# ============================================================================
+# PYDANTIC SCHEMAS (LOCAL TO THIS FILE)
+# ============================================================================
+
+class FacultyCreate(BaseModel):
+    name: str = Field(..., example="Dr. Raj Gupta")
+    email: EmailStr = Field(..., example="raj.gupta@example.com")
+    password: str = Field(..., min_length=6)
+    ph_no: Optional[str] = Field(None, example="9876543210")
+    designation: Optional[str] = Field(None, example="Associate Professor")
+    dept_id: str = Field(..., example="CSE")
+
+
+class FacultyResponse(BaseModel):
+    faculty_id: int
+    name: str
+    email: EmailStr
+    ph_no: Optional[str] = None
+    designation: Optional[str] = None
+    dept_id: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FacultySearchOut(BaseModel):
+    faculty_id: int
+    name: str
+    email: EmailStr
+    designation: Optional[str]
+    dept_id: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# REGISTER FACULTY
+# ============================================================================
+
+@router.post(
+    "/register",
+    response_model=FacultyResponse,
+    status_code=status.HTTP_201_CREATED
+)
 def register_faculty(payload: FacultyCreate, db: db_dependency):
-    # Generate ID if not provided
-    faculty_id = payload.id
-    if not faculty_id:
-        # Generate ID from facultyid or use a unique identifier
-        faculty_id = payload.facultyid if payload.facultyid else payload.email.split('@')[0]
-    
-    # prevent duplicates by id or email in SQLite
-    existing = db.query(Faculty).filter(
-        (Faculty.id == faculty_id) | (Faculty.email == payload.email)
+
+    # Check duplicate faculty email in SQL
+    existing_faculty = db.query(Faculty).filter(
+        Faculty.email == payload.email
     ).first()
-    if existing:
+    if existing_faculty:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Faculty with this id or email already exists."
+            detail="Faculty with this email already exists."
         )
-    
-    # Check for existing user in MongoDB
+
+    # Check duplicate user in MongoDB
     users_col = get_users_collection()
-    existing_user = users_col.find_one({"email": payload.email})
-    if existing_user:
+    if users_col.find_one({"email": payload.email}):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered in the system."
+            detail="Email already registered in authentication system."
         )
 
-    # Hash the password using bcrypt directly
-    password_bytes = payload.password.encode('utf-8')
-    salt = bcrypt.gensalt()
-    hashed_password = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
-    
-    # Save login credentials to MongoDB
-    user_doc = {
-        "user_id": faculty_id,
-        "email": payload.email,
-        "name": payload.name,
-        "password": hashed_password,
-        "user_type": "faculty",
-        "created_at": datetime.utcnow()
-    }
-    users_col.insert_one(user_doc)
+    # Hash password
+    hashed_password = bcrypt.hashpw(
+        payload.password.encode("utf-8"),
+        bcrypt.gensalt()
+    ).decode("utf-8")
 
-    # Create new faculty in SQLite (without password)
+    # Create faculty (SQL)
     new_faculty = Faculty(
-        id=faculty_id,
-        facultyid=payload.facultyid,
         name=payload.name,
-        department=payload.department,
         email=payload.email,
+        ph_no=payload.ph_no,
+        designation=payload.designation,
+        dept_id=payload.dept_id,
     )
 
     try:
@@ -82,33 +112,52 @@ def register_faculty(payload: FacultyCreate, db: db_dependency):
         db.refresh(new_faculty)
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail="Database error while creating faculty.") from e
+        raise HTTPException(
+            status_code=500,
+            detail="Error while creating faculty record."
+        ) from e
+
+    # Store credentials in MongoDB
+    users_col.insert_one({
+        "user_id": new_faculty.faculty_id,
+        "email": payload.email,
+        "name": payload.name,
+        "password": hashed_password,
+        "user_type": "faculty",
+        "created_at": datetime.utcnow()
+    })
 
     return new_faculty
 
 
-@router.get("/search")
-def search_faculty(query: str, db: db_dependency):
-    """Search for faculty by ID, name, email, or faculty ID"""
-    query = query.strip().lower()
-    
-    faculty_list = db.query(Faculty).filter(
-        (Faculty.id.ilike(f"%{query}%")) |
-        (Faculty.facultyid.ilike(f"%{query}%")) |
-        (Faculty.name.ilike(f"%{query}%")) |
-        (Faculty.email.ilike(f"%{query}%"))
-    ).all()
-    
-    if not faculty_list:
-        raise HTTPException(status_code=404, detail="No matching faculty found")
-    
-    return [
-        {
-            "id": f.id,
-            "facultyid": f.facultyid,
-            "name": f.name,
-            "email": f.email,
-            "department": f.department,
-        }
-        for f in faculty_list
-    ]
+# ============================================================================
+# SEARCH FACULTY
+# ============================================================================
+
+# @router.get(
+#     "/search",
+#     response_model=List[FacultySearchOut]
+# )
+# def search_faculty(query: str, db: db_dependency):
+#     """
+#     Search faculty by:
+#     - faculty_id
+#     - name
+#     - email
+#     - designation
+#     """
+#     q = f"%{query.strip().lower()}%"
+
+#     faculty_list = db.query(Faculty).filter(
+#         (Faculty.name.ilike(q)) |
+#         (Faculty.email.ilike(q)) |
+#         (Faculty.designation.ilike(q))
+#     ).all()
+
+#     if not faculty_list:
+#         raise HTTPException(
+#             status_code=404,
+#             detail="No matching faculty found."
+#         )
+
+#     return faculty_list

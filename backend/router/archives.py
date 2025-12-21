@@ -1,15 +1,20 @@
 # app/archives.py
-from typing import Annotated, List
-from fastapi import APIRouter, Depends, HTTPException, status
+
+from typing import Annotated, List, Optional
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel, ConfigDict
 
 from database import SessionLocal
-from models import Archives
-from schemas import ArchiveResponse
+from models import Archive
 
 router = APIRouter(prefix="/archives", tags=["archives"])
 
-# local DB dependency
+
+# ============================================================================
+# DATABASE DEPENDENCY
+# ============================================================================
+
 def get_db():
     db = SessionLocal()
     try:
@@ -20,20 +25,44 @@ def get_db():
 DB = Annotated[Session, Depends(get_db)]
 
 
-# ---------- GET all archives ----------
+# ============================================================================
+# LOCAL PYDANTIC SCHEMA
+# ============================================================================
+
+class ArchiveResponse(BaseModel):
+    archive_id: int
+    title: str
+    sem: Optional[int]
+    abstract: Optional[str]
+    report_link: Optional[str]
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ============================================================================
+# GET ALL ARCHIVES
+# ============================================================================
+
 @router.get("/", response_model=List[ArchiveResponse])
 def get_all_archives(db: DB):
-    """Get all archived projects."""
-    archives = db.query(Archives).all()
-    return archives
+    return db.query(Archive).all()
 
 
-# ---------- GET one archive ----------
+# ============================================================================
+# GET SINGLE ARCHIVE
+# ============================================================================
+
 @router.get("/{archive_id}", response_model=ArchiveResponse)
 def get_archive(archive_id: int, db: DB):
-    """Get a single archive by ID."""
-    archive = db.query(Archives).filter(Archives.id == archive_id).first()
-    if not archive:
-        raise HTTPException(status_code=404, detail=f"Archive with id {archive_id} not found.")
-    return archive
 
+    archive = db.query(Archive).filter(
+        Archive.archive_id == archive_id
+    ).first()
+
+    if not archive:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Archive with id {archive_id} not found."
+        )
+
+    return archive
