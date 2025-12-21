@@ -8,22 +8,19 @@ const Home = () => {
       icon: Users,
       title: 'Form Teams',
       description: 'Collaborate with students from your cluster. Find teammates with complementary skills and shared interests.',
-      color: 'from-blue-500 to-cyan-500',
-      href: '/form-team'
+      color: 'from-blue-500 to-cyan-500'
     },
     {
       icon: FolderKanban,
       title: 'Submit Projects',
       description: 'Present your innovative ideas. Submit comprehensive project proposals with clear objectives and timelines.',
-      color: 'from-indigo-500 to-blue-600',
-      href: '/submit-project'
+      color: 'from-indigo-500 to-blue-600'
     },
     {
       icon: Archive,
       title: 'Archives',
       description: 'Browse through completed projects and learn from past innovations and successful implementations.',
-      color: 'from-slate-500 to-slate-600',
-      href: '/archives'
+      color: 'from-slate-500 to-slate-600'
     }
   ];
 
@@ -48,7 +45,7 @@ const Home = () => {
             {/* Badge */}
             <div className="inline-flex items-center space-x-2 bg-slate-800/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm border border-slate-700 mb-8">
               <Sparkles className="w-4 h-4 text-blue-400" />
-              <span className="text-sm font-medium text-slate-300">Experiential Learning Platform</span>
+              <span className="text-base font-medium text-slate-300">Experiential Learning Platform</span>
             </div>
 
             {/* Main Heading */}
@@ -59,11 +56,11 @@ const Home = () => {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-xl md:text-2xl text-slate-300 mb-4 max-w-3xl mx-auto">
+            <p className="text-2xl md:text-3xl text-slate-300 mb-4 max-w-3xl mx-auto">
               Form Teams · Submit EL Projects · Get Approved
             </p>
             
-            <p className="text-base text-slate-400 mb-12 max-w-2xl mx-auto">
+            <p className="text-lg text-slate-400 mb-12 max-w-2xl mx-auto">
               The complete platform for managing experiential learning projects. Collaborate, innovate, and bring your ideas to life with faculty mentorship.
             </p>
 
@@ -105,10 +102,9 @@ const Home = () => {
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
-                <a
+                <div
                   key={index}
-                  href={feature.href}
-                  className="group relative bg-slate-700 rounded-2xl p-8 hover:bg-slate-600 transition-all duration-300 border border-slate-600 hover:border-blue-500 hover:shadow-xl cursor-pointer block no-underline"
+                  className="group relative bg-slate-700 rounded-2xl p-8 hover:bg-slate-600 transition-all duration-300 border border-slate-600 hover:border-blue-500 hover:shadow-xl"
                 >
                   {/* Icon with gradient background */}
                   <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.color} mb-6 group-hover:scale-110 transition-transform duration-300`}>
@@ -116,16 +112,16 @@ const Home = () => {
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-xl font-semibold text-white mb-3">
+                  <h3 className="text-2xl font-semibold text-white mb-3">
                     {feature.title}
                   </h3>
-                  <p className="text-slate-300 leading-relaxed">
+                  <p className="text-lg text-slate-300 leading-relaxed">
                     {feature.description}
                   </p>
 
                   {/* Hover effect */}
                   <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
-                </a>
+                </div>
               );
             })}
           </div>

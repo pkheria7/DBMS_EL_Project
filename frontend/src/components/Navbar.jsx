@@ -54,7 +54,7 @@ const Navbar = () => {
               <h2 style={{
                 fontFamily: theme.font.family,
                 fontWeight: theme.font.weights.semibold,
-                fontSize: '1.5rem', // text-2xl equivalent
+                fontSize: '1.875rem', // text-3xl equivalent (increased from text-2xl)
                 color: '#3b82f6',
                 cursor: 'pointer',
               }}>
@@ -74,7 +74,7 @@ const Navbar = () => {
                     textDecoration: 'none',
                     padding: '0.5rem 0.75rem',
                     borderRadius: '0.375rem',
-                    fontSize: '0.875rem',
+                    fontSize: '1rem', // increased from 0.875rem
                     fontWeight: theme.font.weights.medium,
                     transition: 'all 0.3s ease',
                     color: '#cbd5e1',
@@ -103,7 +103,7 @@ const Navbar = () => {
                     textDecoration: 'none',
                     padding: '0.5rem 1.25rem',
                     borderRadius: '0.5rem',
-                    fontSize: '0.875rem',
+                    fontSize: '1rem', // increased from 0.875rem
                     fontWeight: theme.font.weights.medium,
                     transition: 'all 0.3s ease',
                     backgroundColor: '#2563eb',
@@ -185,7 +185,7 @@ const Navbar = () => {
                   display: 'block',
                   padding: '0.5rem 0.75rem',
                   borderRadius: '0.375rem',
-                  fontSize: '1rem',
+                  fontSize: '1.125rem', // increased from 1rem
                   fontWeight: theme.font.weights.medium,
                   transition: 'all 0.3s ease',
                   color: '#cbd5e1',
@@ -220,7 +220,7 @@ const Navbar = () => {
                   display: 'block',
                   padding: '0.5rem 0.75rem',
                   borderRadius: '0.375rem',
-                  fontSize: '1rem',
+                  fontSize: '1.125rem', // increased from 1rem
                   fontWeight: theme.font.weights.medium,
                   color: 'white',
                   border: 'none',
@@ -247,7 +247,7 @@ const Navbar = () => {
                   display: 'block',
                   padding: '0.5rem 0.75rem',
                   borderRadius: '0.375rem',
-                  fontSize: '1rem',
+                  fontSize: '1.125rem', // increased from 1rem
                   fontWeight: theme.font.weights.medium,
                   color: 'white',
                   backgroundColor: '#4f46e5',

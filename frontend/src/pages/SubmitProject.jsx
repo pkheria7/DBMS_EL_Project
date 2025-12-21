@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, FolderKanban } from 'lucide-react';
 import client from '../api/client';
-import Navbar from '../components/Navbar';
-import theme from '../theme';
 import toast from 'react-hot-toast';
 
 const SubmitProject = () => {
+  const navigate = useNavigate();
   const [teams, setTeams] = useState([]);
   const [loadingTeams, setLoadingTeams] = useState(true);
   const [formData, setFormData] = useState({
@@ -20,6 +21,14 @@ const SubmitProject = () => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const userType = localStorage.getItem('userType');
+    if (!userType || userType !== 'student') {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   // Fetch teams on component mount
   useEffect(() => {
@@ -111,6 +120,11 @@ const SubmitProject = () => {
           projectid: Math.floor(Math.random() * 9000) + 1000, // Generate new projectid
         });
         setErrors({});
+        
+        // Redirect to student dashboard after a short delay
+        setTimeout(() => {
+          navigate('/student-dashboard');
+        }, 1000);
       }
     } catch (error) {
       if (error.response?.data?.detail) {
@@ -123,290 +137,193 @@ const SubmitProject = () => {
     }
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '0.5rem 0.75rem',
-    borderRadius: '0.375rem',
-    border: '1px solid #D1D5DB',
-    fontSize: '0.8125rem',
-    fontFamily: theme.font.family,
-    transition: 'all 0.2s ease',
-    outline: 'none',
-  };
-
-  const inputFocusStyle = {
-    borderColor: theme.colors.primary,
-    boxShadow: `0 0 0 3px rgba(23, 92, 211, 0.1)`,
-  };
-
-  const labelStyle = {
-    display: 'block',
-    marginBottom: '0.25rem',
-    fontSize: '0.75rem',
-    fontWeight: theme.font.weights.medium,
-    color: theme.colors.text,
-    fontFamily: theme.font.family,
-  };
-
-  const errorTextStyle = {
-    color: theme.colors.error,
-    fontSize: '0.6875rem',
-    marginTop: '0.125rem',
-  };
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: theme.colors.background }}>
-      <Navbar />
-      <div style={{ 
-        paddingTop: '5rem', 
-        paddingBottom: '1rem',
-        paddingLeft: '1rem',
-        paddingRight: '1rem',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        minHeight: 'calc(100vh - 4rem)',
-      }}>
-        <div className="fade-up" style={{
-          maxWidth: '700px',
-          width: '100%',
-          backgroundColor: 'white',
-          borderRadius: '0.75rem',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-          padding: '1.5rem',
-          maxHeight: 'calc(100vh - 6rem)',
-          overflowY: 'auto',
-        }}>
-          <h1 style={{
-            fontFamily: theme.font.family,
-            fontSize: '1.5rem',
-            fontWeight: theme.font.weights.semibold,
-            color: theme.colors.text,
-            marginBottom: '1rem',
-            textAlign: 'center',
-          }}>
-            Submit Project
-          </h1>
-
-          <form onSubmit={handleSubmit} style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '1rem',
-          }}>
-            {/* Team Selection */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="team_id" style={labelStyle}>Team *</label>
-              <select
-                id="team_id"
-                name="team_id"
-                value={formData.team_id}
-                onChange={handleChange}
-                disabled={loadingTeams}
-                required
-                style={{
-                  ...inputStyle,
-                  ...(errors.team_id ? { borderColor: theme.colors.error } : {}),
-                  cursor: loadingTeams ? 'not-allowed' : 'pointer',
-                  ...(loadingTeams ? { backgroundColor: '#F3F4F6', opacity: 0.6 } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.team_id && !loadingTeams) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.team_id ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              >
-                <option value="">{loadingTeams ? 'Loading teams...' : 'Select a team'}</option>
-                {teams.map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.teamname || `Team ${team.id}`} {team.cluster ? `(${team.cluster})` : ''}
-                  </option>
-                ))}
-              </select>
-              {errors.team_id && <div style={errorTextStyle}>{errors.team_id}</div>}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Header with Back Button */}
+      <div className="bg-slate-800/50 border-b border-slate-700 px-6 py-4">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/student-dashboard')}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all duration-200 border border-slate-600"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <FolderKanban className="w-6 h-6 text-white" />
             </div>
-
-            {/* Project Title */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="title" style={labelStyle}>Project Title *</label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-                style={{
-                  ...inputStyle,
-                  ...(errors.title ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.title) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.title ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-              {errors.title && <div style={errorTextStyle}>{errors.title}</div>}
-            </div>
-
-            {/* Description */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="description" style={labelStyle}>Description</label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={3}
-                style={{
-                  ...inputStyle,
-                  resize: 'vertical',
-                }}
-                onFocus={(e) => {
-                  Object.assign(e.target.style, inputFocusStyle);
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-            </div>
-
-            {/* Domain */}
             <div>
-              <label htmlFor="domain" style={labelStyle}>Domain</label>
-              <input
-                type="text"
-                id="domain"
-                name="domain"
-                value={formData.domain}
-                onChange={handleChange}
-                style={inputStyle}
-                onFocus={(e) => {
-                  Object.assign(e.target.style, inputFocusStyle);
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
+              <h1 className="text-xl font-bold text-white">Submit Project</h1>
+              <p className="text-slate-400 text-sm">Share your innovative ideas</p>
             </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Demo Video Link */}
-            <div>
-              <label htmlFor="demovideolink" style={labelStyle}>Demo Video Link</label>
-              <input
-                type="url"
-                id="demovideolink"
-                name="demovideolink"
-                value={formData.demovideolink}
-                onChange={handleChange}
-                placeholder="https://..."
-                style={{
-                  ...inputStyle,
-                  ...(errors.demovideolink ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.demovideolink) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.demovideolink ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-              {errors.demovideolink && <div style={errorTextStyle}>{errors.demovideolink}</div>}
-            </div>
+      <div className="pt-12 pb-12 px-4 flex justify-center items-center">
+        <div className="w-full max-w-3xl">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-blue-400">
+                Submit Your Project
+              </span>
+            </h1>
+            <p className="text-lg text-slate-300">
+              Present your team's innovative solution and implementation
+            </p>
+          </div>
 
-            {/* Year */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="year" style={labelStyle}>Year</label>
-              <select
-                id="year"
-                name="year"
-                value={formData.year}
-                onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  cursor: 'pointer',
-                }}
-                onFocus={(e) => {
-                  Object.assign(e.target.style, inputFocusStyle);
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              >
-                <option value="">Select year</option>
-                <option value="2023">2023</option>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
-              </select>
-            </div>
+          {/* Form Card */}
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8 shadow-xl">
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">
+              Project Details
+            </h2>
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Team Selection */}
+              <div className="md:col-span-2">
+                <label htmlFor="team_id" className="block text-sm font-medium text-slate-300 mb-2">
+                  Team *
+                </label>
+                <select
+                  id="team_id"
+                  name="team_id"
+                  value={formData.team_id}
+                  onChange={handleChange}
+                  disabled={loadingTeams}
+                  required
+                  className={`w-full px-4 py-3 bg-slate-700 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base ${
+                    errors.team_id ? 'border-red-500' : 'border-slate-600'
+                  } ${loadingTeams ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <option value="" className="bg-slate-700">{loadingTeams ? 'Loading teams...' : 'Select a team'}</option>
+                  {teams.map((team) => (
+                    <option key={team.id} value={team.id} className="bg-slate-700">
+                      {team.teamname || `Team ${team.id}`} {team.cluster ? `(${team.cluster})` : ''}
+                    </option>
+                  ))}
+                </select>
+                {errors.team_id && <div className="text-red-400 text-sm mt-1">{errors.team_id}</div>}
+              </div>
 
-            {/* Submit Button */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                style={{
-                  width: '100%',
-                  backgroundColor: isSubmitting ? '#9CA3AF' : theme.colors.primary,
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.375rem',
-                  border: 'none',
-                  fontSize: '0.875rem',
-                  fontWeight: theme.font.weights.medium,
-                  fontFamily: theme.font.family,
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                }}
-              onMouseEnter={(e) => {
-                if (!isSubmitting) {
-                  e.target.style.backgroundColor = '#1248A8';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isSubmitting) {
-                  e.target.style.backgroundColor = theme.colors.primary;
-                }
-              }}
-            >
-              {isSubmitting ? (
-                <>
-                  <svg
-                    className="animate-spin"
-                    style={{
-                      width: '1.125rem',
-                      height: '1.125rem',
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      borderTopColor: 'white',
-                      borderRadius: '50%',
-                    }}
-                  />
-                  <span>Submitting...</span>
-                </>
-              ) : (
-                'Submit Project'
-              )}
-              </button>
-            </div>
-          </form>
+              {/* Project Title */}
+              <div className="md:col-span-2">
+                <label htmlFor="title" className="block text-sm font-medium text-slate-300 mb-2">
+                  Project Title *
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter your project title"
+                  className={`w-full px-4 py-3 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base ${
+                    errors.title ? 'border-red-500' : 'border-slate-600'
+                  }`}
+                />
+                {errors.title && <div className="text-red-400 text-sm mt-1">{errors.title}</div>}
+              </div>
+
+              {/* Description */}
+              <div className="md:col-span-2">
+                <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-2">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={4}
+                  placeholder="Describe your project..."
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base resize-vertical"
+                />
+              </div>
+
+              {/* Domain */}
+              <div>
+                <label htmlFor="domain" className="block text-sm font-medium text-slate-300 mb-2">
+                  Domain
+                </label>
+                <input
+                  type="text"
+                  id="domain"
+                  name="domain"
+                  value={formData.domain}
+                  onChange={handleChange}
+                  placeholder="e.g., Web Development, AI/ML"
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+                />
+              </div>
+
+              {/* Demo Video Link */}
+              <div>
+                <label htmlFor="demovideolink" className="block text-sm font-medium text-slate-300 mb-2">
+                  Demo Video Link
+                </label>
+                <input
+                  type="url"
+                  id="demovideolink"
+                  name="demovideolink"
+                  value={formData.demovideolink}
+                  onChange={handleChange}
+                  placeholder="https://..."
+                  className={`w-full px-4 py-3 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base ${
+                    errors.demovideolink ? 'border-red-500' : 'border-slate-600'
+                  }`}
+                />
+                {errors.demovideolink && <div className="text-red-400 text-sm mt-1">{errors.demovideolink}</div>}
+              </div>
+
+              {/* Year */}
+              <div className="md:col-span-2">
+                <label htmlFor="year" className="block text-sm font-medium text-slate-300 mb-2">
+                  Year
+                </label>
+                <select
+                  id="year"
+                  name="year"
+                  value={formData.year}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base cursor-pointer"
+                >
+                  <option value="" className="bg-slate-700">Select year</option>
+                  <option value="2023" className="bg-slate-700">2023</option>
+                  <option value="2024" className="bg-slate-700">2024</option>
+                  <option value="2025" className="bg-slate-700">2025</option>
+                  <option value="2026" className="bg-slate-700">2026</option>
+                </select>
+              </div>
+
+              {/* Submit Button */}
+              <div className="md:col-span-2">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`w-full py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 transition-all duration-200 ${
+                    isSubmitting
+                      ? 'bg-slate-600 cursor-not-allowed opacity-60'
+                      : 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5'
+                  } text-white`}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    'Submit Project'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

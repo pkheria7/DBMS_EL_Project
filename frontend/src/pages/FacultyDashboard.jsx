@@ -9,7 +9,8 @@ import {
   Edit, 
   Users as UsersIcon,
   Hash,
-  GraduationCap
+  GraduationCap,
+  Archive
 } from 'lucide-react';
 import client from '../api/client';
 
@@ -177,7 +178,7 @@ const FacultyDashboard = () => {
         </div>
 
         {/* Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* View Teams Card */}
           <button
             onClick={() => navigate('/teams')}
@@ -203,6 +204,20 @@ const FacultyDashboard = () => {
             <h3 className="text-2xl font-bold text-white mb-3">View Projects</h3>
             <p className="text-slate-300 leading-relaxed">
               Review and evaluate student project submissions. Provide feedback and assess project quality.
+            </p>
+          </button>
+
+          {/* Archives Card */}
+          <button
+            onClick={() => navigate('/archives')}
+            className="bg-gradient-to-br from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 border border-slate-600 rounded-2xl p-8 text-left transition-all duration-300 hover:scale-105 hover:shadow-xl group"
+          >
+            <div className="w-16 h-16 bg-gradient-to-br from-slate-500 to-slate-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <Archive className="w-8 h-8 text-white" />
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-3">Archives</h3>
+            <p className="text-slate-300 leading-relaxed">
+              Browse through completed projects and learn from past innovations and successful implementations.
             </p>
           </button>
         </div>

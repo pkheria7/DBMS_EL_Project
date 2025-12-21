@@ -1,14 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Archive, Search, Calendar, Tag } from 'lucide-react';
 import client from '../api/client';
-import Navbar from '../components/Navbar';
-import theme from '../theme';
 
 const ArchivesList = () => {
+  const navigate = useNavigate();
   const [archives, setArchives] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [filterDomain, setFilterDomain] = useState('');
   const [filterYear, setFilterYear] = useState('');
+  const [userType, setUserType] = useState('');
+
+  // Check authentication on mount
+  useEffect(() => {
+    const type = localStorage.getItem('userType');
+    if (!type || (type !== 'student' && type !== 'faculty')) {
+      navigate('/login');
+      return;
+    }
+    setUserType(type);
+  }, [navigate]);
 
   useEffect(() => {
     fetchArchives();
@@ -32,288 +44,178 @@ const ArchivesList = () => {
     return matchesDomain && matchesYear;
   });
 
-  const cardStyle = {
-    backgroundColor: 'white',
-    borderRadius: '0.75rem',
-    padding: '1.5rem',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-    transition: 'all 0.3s ease',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    position: 'relative',
-    overflow: 'hidden',
+  const handleBack = () => {
+    if (userType === 'student') {
+      navigate('/student-dashboard');
+    } else if (userType === 'faculty') {
+      navigate('/faculty-dashboard');
+    } else {
+      navigate('/');
+    }
   };
 
   return (
-    <>
-      <Navbar />
-      <div style={{
-        minHeight: '100vh',
-        background: theme.gradients.hero,
-        paddingTop: '5rem',
-      }}>
-        <div style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          padding: '2rem 1rem',
-        }}>
-          {/* Header */}
-          <div style={{ marginBottom: '2rem' }}>
-            <h1 style={{
-              fontFamily: theme.font.family,
-              fontSize: '2.5rem',
-              fontWeight: theme.font.weights.semibold,
-              color: 'white',
-              marginBottom: '0.5rem',
-            }}>
-              Archives
-            </h1>
-            <p style={{
-              fontFamily: theme.font.family,
-              fontSize: '1.125rem',
-              color: 'rgba(255, 255, 255, 0.9)',
-            }}>
-              Browse archived EL projects from previous years
-            </p>
-          </div>
-
-          {/* Filters */}
-          <div style={{
-            backgroundColor: 'white',
-            borderRadius: '0.75rem',
-            padding: '1.5rem',
-            marginBottom: '2rem',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-            gap: '1rem',
-          }}>
-            <div>
-              <label style={{
-                display: 'block',
-                marginBottom: '0.5rem',
-                fontSize: '0.875rem',
-                fontWeight: theme.font.weights.medium,
-                color: theme.colors.text,
-                fontFamily: theme.font.family,
-              }}>
-                Filter by Domain
-              </label>
-              <input
-                type="text"
-                value={filterDomain}
-                onChange={(e) => setFilterDomain(e.target.value)}
-                placeholder="e.g., AI, Web, Mobile"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '0.5rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.9375rem',
-                  fontFamily: theme.font.family,
-                  outline: 'none',
-                }}
-              />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Header with Back Button */}
+      <div className="bg-slate-800/50 border-b border-slate-700 px-6 py-4">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all duration-200 border border-slate-600"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <Archive className="w-6 h-6 text-white" />
             </div>
-
             <div>
-              <label style={{
-                display: 'block',
-                marginBottom: '0.5rem',
-                fontSize: '0.875rem',
-                fontWeight: theme.font.weights.medium,
-                color: theme.colors.text,
-                fontFamily: theme.font.family,
-              }}>
-                Filter by Year
-              </label>
-              <input
-                type="text"
-                value={filterYear}
-                onChange={(e) => setFilterYear(e.target.value)}
-                placeholder="e.g., 2024"
-                style={{
-                  width: '100%',
-                  padding: '0.75rem',
-                  borderRadius: '0.5rem',
-                  border: '1px solid #D1D5DB',
-                  fontSize: '0.9375rem',
-                  fontFamily: theme.font.family,
-                  outline: 'none',
-                }}
-              />
+              <h1 className="text-xl font-bold text-white">Archives</h1>
+              <p className="text-slate-400 text-sm">Browse past projects</p>
             </div>
           </div>
-
-          {/* Error Message */}
-          {errorMessage && (
-            <div style={{
-              backgroundColor: '#FEE2E2',
-              color: '#991B1B',
-              padding: '1rem',
-              borderRadius: '0.5rem',
-              marginBottom: '1.5rem',
-              fontFamily: theme.font.family,
-            }}>
-              {errorMessage}
-            </div>
-          )}
-
-          {/* Loading State */}
-          {isLoading ? (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              minHeight: '300px',
-              color: 'white',
-              fontFamily: theme.font.family,
-              fontSize: '1.125rem',
-            }}>
-              Loading archives...
-            </div>
-          ) : filteredArchives.length === 0 ? (
-            <div style={{
-              backgroundColor: 'white',
-              borderRadius: '0.75rem',
-              padding: '3rem',
-              textAlign: 'center',
-            }}>
-              <p style={{
-                fontFamily: theme.font.family,
-                fontSize: '1.125rem',
-                color: '#6B7280',
-              }}>
-                {archives.length === 0 ? 'No archived projects found.' : 'No archives match your filters.'}
-              </p>
-            </div>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-              gap: '1.5rem',
-            }}>
-              {filteredArchives.map((archive) => (
-                <div
-                  key={archive.id}
-                  style={cardStyle}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
-                  }}
-                >
-                  {/* Archived Badge */}
-                  <div style={{
-                    position: 'absolute',
-                    top: '1rem',
-                    right: '1rem',
-                    padding: '0.25rem 0.75rem',
-                    backgroundColor: '#FEF3C7',
-                    color: '#92400E',
-                    borderRadius: '9999px',
-                    fontSize: '0.75rem',
-                    fontWeight: theme.font.weights.medium,
-                    fontFamily: theme.font.family,
-                  }}>
-                    Archived
-                  </div>
-
-                  {/* Project Title */}
-                  <h3 style={{
-                    fontFamily: theme.font.family,
-                    fontSize: '1.25rem',
-                    fontWeight: theme.font.weights.semibold,
-                    color: theme.colors.primary,
-                    marginBottom: '0.75rem',
-                    lineHeight: '1.4',
-                    paddingRight: '5rem',
-                  }}>
-                    {archive.projecttitle || 'Untitled Project'}
-                  </h3>
-
-                  {/* Meta Information */}
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.5rem',
-                    marginBottom: '1rem',
-                  }}>
-                    {archive.domain && (
-                      <span style={{
-                        padding: '0.25rem 0.75rem',
-                        backgroundColor: 'rgba(23, 92, 211, 0.1)',
-                        color: theme.colors.primary,
-                        borderRadius: '0.375rem',
-                        fontSize: '0.8125rem',
-                        fontFamily: theme.font.family,
-                        fontWeight: theme.font.weights.medium,
-                      }}>
-                        {archive.domain}
-                      </span>
-                    )}
-                    {archive.year && (
-                      <span style={{
-                        padding: '0.25rem 0.75rem',
-                        backgroundColor: '#F3F4F6',
-                        color: theme.colors.text,
-                        borderRadius: '0.375rem',
-                        fontSize: '0.8125rem',
-                        fontFamily: theme.font.family,
-                      }}>
-                        {archive.year}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Contact Info */}
-                  {archive.contactinfo && (
-                    <div style={{
-                      fontSize: '0.875rem',
-                      color: '#6B7280',
-                      fontFamily: theme.font.family,
-                      marginBottom: '1rem',
-                      flexGrow: 1,
-                    }}>
-                      Contact: {archive.contactinfo}
-                    </div>
-                  )}
-
-                  {/* View Button */}
-                  <button
-                    onClick={() => window.location.href = `/archives/${archive.id}`}
-                    style={{
-                      width: '100%',
-                      backgroundColor: theme.colors.primary,
-                      color: 'white',
-                      padding: '0.75rem',
-                      borderRadius: '0.5rem',
-                      border: 'none',
-                      fontSize: '0.9375rem',
-                      fontWeight: theme.font.weights.medium,
-                      fontFamily: theme.font.family,
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = theme.colors.primaryLight;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = theme.colors.primary;
-                    }}
-                  >
-                    View Details
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
-    </>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-12">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-blue-400">
+              Project Archives
+            </span>
+          </h1>
+          <p className="text-lg text-slate-300">
+            Browse archived EL projects from previous years
+          </p>
+        </div>
+
+        {/* Filters */}
+        <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 mb-8 shadow-xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
+                <Tag className="w-4 h-4" />
+                Filter by Domain
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={filterDomain}
+                  onChange={(e) => setFilterDomain(e.target.value)}
+                  placeholder="e.g., AI, Web, Mobile"
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all text-base"
+                />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+              </div>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
+                <Calendar className="w-4 h-4" />
+                Filter by Year
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={filterYear}
+                  onChange={(e) => setFilterYear(e.target.value)}
+                  placeholder="e.g., 2024"
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all text-base"
+                />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="bg-red-900/50 border border-red-700 text-red-200 px-6 py-4 rounded-lg mb-6">
+            {errorMessage}
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+            <p className="text-white text-lg">Loading archives...</p>
+          </div>
+        ) : filteredArchives.length === 0 ? (
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-12 text-center">
+            <Archive className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+            <p className="text-slate-300 text-lg">
+              {archives.length === 0 ? 'No archived projects found.' : 'No archives match your filters.'}
+            </p>
+            {archives.length > 0 && (
+              <button
+                onClick={() => {
+                  setFilterDomain('');
+                  setFilterYear('');
+                }}
+                className="mt-4 px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all duration-200"
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredArchives.map((archive) => (
+              <div
+                key={archive.id}
+                className="group bg-slate-800 border border-slate-700 rounded-2xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-slate-600 cursor-pointer relative overflow-hidden"
+                onClick={() => navigate(`/archives/${archive.id}`)}
+              >
+                {/* Archived Badge */}
+                <div className="absolute top-4 right-4 px-3 py-1 bg-yellow-900/50 border border-yellow-700 text-yellow-200 rounded-full text-xs font-medium">
+                  Archived
+                </div>
+
+                {/* Project Title */}
+                <h3 className="text-xl font-bold text-white mb-3 pr-20 line-clamp-2 group-hover:text-blue-400 transition-colors">
+                  {archive.projecttitle || 'Untitled Project'}
+                </h3>
+
+                {/* Meta Information */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {archive.domain && (
+                    <span className="px-3 py-1 bg-blue-600/20 border border-blue-500 text-blue-300 rounded-full text-xs font-medium">
+                      {archive.domain}
+                    </span>
+                  )}
+                  {archive.year && (
+                    <span className="px-3 py-1 bg-slate-700 border border-slate-600 text-slate-300 rounded-full text-xs">
+                      {archive.year}
+                    </span>
+                  )}
+                </div>
+
+                {/* Contact Info */}
+                {archive.contactinfo && (
+                  <div className="text-sm text-slate-400 mb-4 line-clamp-2">
+                    Contact: {archive.contactinfo}
+                  </div>
+                )}
+
+                {/* View Button */}
+                <div className="mt-auto pt-4 border-t border-slate-700">
+                  <div className="flex items-center justify-between text-blue-400 group-hover:text-blue-300 font-medium">
+                    <span>View Details</span>
+                    <ArrowLeft className="w-4 h-4 rotate-180 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+
+                {/* Hover effect overlay */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-slate-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

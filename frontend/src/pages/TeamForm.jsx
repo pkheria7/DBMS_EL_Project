@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, GraduationCap } from 'lucide-react';
 import client from '../api/client';
-import Navbar from '../components/Navbar';
-import theme from '../theme';
 import toast from 'react-hot-toast';
 
 const TeamForm = () => {
+  const navigate = useNavigate();
   const [teamName, setTeamName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -14,6 +15,14 @@ const TeamForm = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const searchTimeoutRef = useRef(null);
   const dropdownRef = useRef(null);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const userType = localStorage.getItem('userType');
+    if (!userType || userType !== 'student') {
+      navigate('/login');
+    }
+  }, [navigate]);
 
   // Debounced search
   useEffect(() => {
@@ -121,10 +130,9 @@ const TeamForm = () => {
         setSearchQuery('');
         setSearchResults([]);
         
-        // Redirect to home after a short delay
+        // Redirect to student dashboard after a short delay
         setTimeout(() => {
-          window.history.pushState({}, '', '/');
-          window.location.reload();
+          navigate('/student-dashboard');
         }, 1000);
       }
     } catch (error) {
@@ -141,304 +149,188 @@ const TeamForm = () => {
     }
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '0.5rem 0.75rem',
-    borderRadius: '0.375rem',
-    border: '1px solid #D1D5DB',
-    fontSize: '0.8125rem',
-    fontFamily: theme.font.family,
-    transition: 'all 0.2s ease',
-    outline: 'none',
-  };
-
-  const inputFocusStyle = {
-    borderColor: theme.colors.primary,
-    boxShadow: `0 0 0 3px rgba(23, 92, 211, 0.1)`,
-  };
-
-  const labelStyle = {
-    display: 'block',
-    marginBottom: '0.25rem',
-    fontSize: '0.75rem',
-    fontWeight: theme.font.weights.medium,
-    color: theme.colors.text,
-    fontFamily: theme.font.family,
-  };
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: theme.colors.background }}>
-      <Navbar />
-      <div style={{ 
-        paddingTop: '5rem', 
-        paddingBottom: '1rem',
-        paddingLeft: '1rem',
-        paddingRight: '1rem',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        minHeight: 'calc(100vh - 4rem)',
-      }}>
-        <div className="fade-up" style={{
-          maxWidth: '700px',
-          width: '100%',
-          backgroundColor: 'white',
-          borderRadius: '0.75rem',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          padding: '1.5rem',
-        }}>
-          <h1 style={{
-            fontFamily: theme.font.family,
-            fontSize: '1.75rem',
-            fontWeight: theme.font.weights.semibold,
-            color: theme.colors.text,
-            marginBottom: '1.5rem',
-            textAlign: 'center',
-          }}>
-            Form Team
-          </h1>
-
-          <form onSubmit={handleSubmit}>
-            {/* Team Name */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label htmlFor="teamname" style={labelStyle}>Team Name</label>
-              <input
-                type="text"
-                id="teamname"
-                name="teamname"
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                required
-                style={inputStyle}
-                onFocus={(e) => {
-                  Object.assign(e.target.style, inputFocusStyle);
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* Header with Back Button */}
+      <div className="bg-slate-800/50 border-b border-slate-700 px-6 py-4">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/student-dashboard')}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all duration-200 border border-slate-600"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+              <GraduationCap className="w-6 h-6 text-white" />
             </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">Form Team</h1>
+              <p className="text-slate-400 text-sm">Create your project team</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Search Members */}
-            <div style={{ marginBottom: '1.5rem', position: 'relative' }} ref={dropdownRef}>
-              <label htmlFor="search" style={labelStyle}>Search & Add Members (4-5 required)</label>
-              <div style={{ position: 'relative' }}>
+      <div className="pt-12 pb-12 px-4 flex justify-center items-center">
+        <div className="w-full max-w-2xl">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400">
+                Form Your Team
+              </span>
+            </h1>
+            <p className="text-lg text-slate-300">
+              Create a team of 4-5 members to collaborate on your project
+            </p>
+          </div>
+
+          {/* Form Card */}
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8 shadow-xl">
+            <h2 className="text-2xl font-bold text-white mb-6 text-center">
+              Team Details
+            </h2>
+
+            <form onSubmit={handleSubmit}>
+              {/* Team Name */}
+              <div className="mb-6">
+                <label htmlFor="teamname" className="block text-sm font-medium text-slate-300 mb-2">
+                  Team Name
+                </label>
                 <input
                   type="text"
-                  id="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, USN, or ID..."
-                  disabled={selectedMembers.length >= 5}
-                  style={{
-                    ...inputStyle,
-                    ...(selectedMembers.length >= 5 ? { 
-                      backgroundColor: '#F3F4F6', 
-                      cursor: 'not-allowed',
-                      opacity: 0.6 
-                    } : {}),
-                  }}
-                  onFocus={(e) => {
-                    if (selectedMembers.length < 5) {
-                      Object.assign(e.target.style, inputFocusStyle);
-                    }
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#D1D5DB';
-                    e.target.style.boxShadow = 'none';
-                  }}
+                  id="teamname"
+                  name="teamname"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
+                  placeholder="Enter your team name"
                 />
-                {isSearching && (
-                  <div style={{
-                    position: 'absolute',
-                    right: '0.75rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: theme.colors.primary,
-                  }}>
-                    <svg className="animate-spin" style={{ width: '1rem', height: '1rem' }}>
-                      <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="2" fill="none" strokeDasharray="43.98" strokeDashoffset="10" />
-                    </svg>
+              </div>
+
+              {/* Search Members */}
+              <div className="mb-6 relative" ref={dropdownRef}>
+                <label htmlFor="search" className="block text-sm font-medium text-slate-300 mb-2">
+                  Search & Add Members (4-5 required)
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    id="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by name, USN, or ID..."
+                    disabled={selectedMembers.length >= 5}
+                    className={`w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base ${
+                      selectedMembers.length >= 5 ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  />
+                  {isSearching && (
+                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                      <svg className="animate-spin h-5 w-5 text-blue-500" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+
+                {/* Dropdown Results */}
+                {showDropdown && searchResults.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-slate-700 border border-slate-600 rounded-lg shadow-xl max-h-64 overflow-y-auto z-10">
+                    {searchResults.map((student) => {
+                      const isSelected = selectedMembers.some(m => m.id === student.id);
+                      return (
+                        <div
+                          key={student.id}
+                          onClick={() => !isSelected && handleAddMember(student)}
+                          className={`p-3 border-b border-slate-600 last:border-b-0 transition-colors ${
+                            isSelected 
+                              ? 'bg-slate-600 cursor-not-allowed opacity-60' 
+                              : 'cursor-pointer hover:bg-slate-600'
+                          }`}
+                        >
+                          <div className="font-medium text-white text-base">
+                            {student.name}
+                          </div>
+                          <div className="text-sm text-slate-400 mt-1 flex items-center gap-2">
+                            <span>{student.usn}</span>
+                            <span>•</span>
+                            <span>{student.id}</span>
+                            {isSelected && (
+                              <>
+                                <span>•</span>
+                                <span className="text-blue-400">✓ Added</span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
 
-              {/* Dropdown Results */}
-              {showDropdown && searchResults.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  marginTop: '0.25rem',
-                  backgroundColor: 'white',
-                  border: '1px solid #D1D5DB',
-                  borderRadius: '0.375rem',
-                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  zIndex: 10,
-                }}>
-                  {searchResults.map((student) => {
-                    const isSelected = selectedMembers.some(m => m.id === student.id);
-                    return (
+              {/* Selected Members Chips */}
+              {selectedMembers.length > 0 && (
+                <div className="mb-6">
+                  <div className="text-sm font-medium text-slate-300 mb-3">
+                    Selected Members ({selectedMembers.length}/5)
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedMembers.map((member) => (
                       <div
-                        key={student.id}
-                        onClick={() => !isSelected && handleAddMember(student)}
-                        style={{
-                          padding: '0.5rem 0.75rem',
-                          cursor: isSelected ? 'not-allowed' : 'pointer',
-                          fontSize: '0.8125rem',
-                          fontFamily: theme.font.family,
-                          backgroundColor: isSelected ? '#F3F4F6' : 'white',
-                          color: isSelected ? '#9CA3AF' : theme.colors.text,
-                          borderBottom: '1px solid #F3F4F6',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isSelected) {
-                            e.target.style.backgroundColor = '#F9FAFB';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isSelected) {
-                            e.target.style.backgroundColor = 'white';
-                          }
-                        }}
+                        key={member.id}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full text-white text-sm font-medium"
                       >
-                        <div style={{ fontWeight: theme.font.weights.medium }}>
-                          {student.name}
-                        </div>
-                        <div style={{ fontSize: '0.75rem', color: '#6B7280', marginTop: '0.125rem' }}>
-                          {student.usn} • {student.id}
-                        </div>
-                        {isSelected && (
-                          <span style={{ fontSize: '0.75rem', color: theme.colors.primary, marginLeft: '0.5rem' }}>
-                            ✓ Added
-                          </span>
-                        )}
+                        <span>{member.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMember(member.id)}
+                          className="flex items-center justify-center w-5 h-5 rounded-full hover:bg-white/20 transition-colors"
+                        >
+                          <span className="text-lg leading-none">×</span>
+                        </button>
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
               )}
-            </div>
 
-            {/* Selected Members Chips */}
-            {selectedMembers.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{
-                  fontSize: '0.75rem',
-                  fontWeight: theme.font.weights.medium,
-                  color: theme.colors.text,
-                  marginBottom: '0.5rem',
-                  fontFamily: theme.font.family,
-                }}>
-                  Selected Members ({selectedMembers.length}/5)
-                </div>
-                <div style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '0.5rem',
-                }}>
-                  {selectedMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.375rem',
-                        padding: '0.25rem 0.75rem',
-                        backgroundColor: '#E5E7EB',
-                        borderRadius: '9999px',
-                        fontSize: '0.75rem',
-                        fontFamily: theme.font.family,
-                        color: theme.colors.text,
-                      }}
-                    >
-                      <span>{member.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveMember(member.id)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          color: theme.colors.text,
-                          fontSize: '1rem',
-                          lineHeight: 1,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.color = theme.colors.error;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.color = theme.colors.text;
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting || selectedMembers.length < 4 || selectedMembers.length > 5}
+                className={`w-full py-4 rounded-xl font-semibold text-base flex items-center justify-center gap-2 transition-all duration-200 ${
+                  isSubmitting || selectedMembers.length < 4 || selectedMembers.length > 5
+                    ? 'bg-slate-600 cursor-not-allowed opacity-60'
+                    : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5'
+                } text-white`}
+              >
+                {isSubmitting ? (
+                  <>
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Creating Team…</span>
+                  </>
+                ) : (
+                  'Create Team'
+                )}
+              </button>
 
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting || selectedMembers.length < 4 || selectedMembers.length > 5}
-              style={{
-                width: '100%',
-                backgroundColor: (isSubmitting || selectedMembers.length < 4 || selectedMembers.length > 5) 
-                  ? '#9CA3AF' 
-                  : theme.colors.primary,
-                color: 'white',
-                padding: '0.625rem 1.25rem',
-                borderRadius: '0.75rem',
-                border: 'none',
-                fontSize: '0.9375rem',
-                fontWeight: theme.font.weights.medium,
-                fontFamily: theme.font.family,
-                cursor: (isSubmitting || selectedMembers.length < 4 || selectedMembers.length > 5) 
-                  ? 'not-allowed' 
-                  : 'pointer',
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-              }}
-              onMouseEnter={(e) => {
-                if (!isSubmitting && selectedMembers.length >= 4 && selectedMembers.length <= 5) {
-                  e.target.style.transform = 'scale(1.05)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'scale(1)';
-              }}
-            >
-              {isSubmitting ? (
-                <>
-                  <svg
-                    className="animate-spin"
-                    style={{
-                      width: '1.125rem',
-                      height: '1.125rem',
-                      border: '2px solid rgba(255, 255, 255, 0.3)',
-                      borderTopColor: 'white',
-                      borderRadius: '50%',
-                    }}
-                  />
-                  <span>Creating Team…</span>
-                </>
-              ) : (
-                'Create Team'
+              {/* Helper Text */}
+              {selectedMembers.length < 4 && (
+                <p className="mt-4 text-sm text-slate-400 text-center">
+                  Please select at least {4 - selectedMembers.length} more member{4 - selectedMembers.length !== 1 ? 's' : ''}
+                </p>
               )}
-            </button>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -446,4 +338,3 @@ const TeamForm = () => {
 };
 
 export default TeamForm;
-
