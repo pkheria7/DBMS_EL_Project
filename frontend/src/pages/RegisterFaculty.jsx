@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
+import { Users, AlertCircle, CheckCircle, Mail, User, Building, Hash, Lock } from 'lucide-react';
 import client from '../api/client';
 import Navbar from '../components/Navbar';
-import theme from '../theme';
 
 const RegisterFaculty = () => {
   const [formData, setFormData] = useState({
-    id: '',
     facultyid: '',
     name: '',
     department: '',
     email: '',
+    password: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -35,7 +35,7 @@ const RegisterFaculty = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    const requiredFields = ['id', 'facultyid', 'name', 'department', 'email'];
+    const requiredFields = ['facultyid', 'name', 'department', 'email', 'password'];
     
     requiredFields.forEach(field => {
       if (!formData[field] || (typeof formData[field] === 'string' && !formData[field].trim())) {
@@ -45,6 +45,10 @@ const RegisterFaculty = () => {
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (formData.password && formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
     }
 
     setErrors(newErrors);
@@ -70,20 +74,20 @@ const RegisterFaculty = () => {
       setErrorMessage('');
       
       setFormData({
-        id: '',
         facultyid: '',
         name: '',
         department: '',
         email: '',
+        password: '',
       });
       setErrors({});
     } catch (error) {
       if (error.response) {
-        setErrorMessage(error.response.data?.detail || 'Error registering faculty');
+        setErrorMessage(error.response.data?.detail || 'Registration failed. Please try again.');
       } else if (error.request) {
         setErrorMessage('Network error. Please check your connection.');
       } else {
-        setErrorMessage('Error registering faculty');
+        setErrorMessage('An error occurred. Please try again.');
       }
       setSuccessMessage('');
     } finally {
@@ -91,287 +95,157 @@ const RegisterFaculty = () => {
     }
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '0.5rem 0.75rem',
-    borderRadius: '0.375rem',
-    border: '1px solid #D1D5DB',
-    fontSize: '0.8125rem',
-    fontFamily: theme.font.family,
-    transition: 'all 0.2s ease',
-    outline: 'none',
-  };
-
-  const inputFocusStyle = {
-    borderColor: theme.colors.primary,
-    boxShadow: `0 0 0 3px rgba(23, 92, 211, 0.1)`,
-  };
-
-  const labelStyle = {
-    display: 'block',
-    marginBottom: '0.25rem',
-    fontSize: '0.75rem',
-    fontWeight: theme.font.weights.medium,
-    color: theme.colors.text,
-    fontFamily: theme.font.family,
-  };
-
-  const errorTextStyle = {
-    color: theme.colors.error,
-    fontSize: '0.6875rem',
-    marginTop: '0.125rem',
-  };
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: theme.colors.background }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Navbar />
-      <div style={{ 
-        paddingTop: '5rem', 
-        paddingBottom: '1rem',
-        paddingLeft: '1rem',
-        paddingRight: '1rem',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        minHeight: 'calc(100vh - 4rem)',
-      }}>
-        <div className="fade-up" style={{
-          maxWidth: '900px',
-          width: '100%',
-          backgroundColor: 'white',
-          borderRadius: '0.75rem',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          padding: '1.5rem',
-          maxHeight: 'calc(100vh - 6rem)',
-          overflowY: 'auto',
-        }}>
-          <h1 style={{
-            fontFamily: theme.font.family,
-            fontSize: '1.75rem',
-            fontWeight: theme.font.weights.semibold,
-            color: theme.colors.text,
-            marginBottom: '1.5rem',
-            textAlign: 'center',
-          }}>
-            Register Faculty
-          </h1>
-
-          {/* Success Message */}
-          {successMessage && (
-            <div style={{
-              backgroundColor: '#D1FAE5',
-              color: '#065F46',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.5rem',
-              marginBottom: '1rem',
-              fontSize: '0.8125rem',
-              fontFamily: theme.font.family,
-            }}>
-              {successMessage}
+      
+      <div className="flex items-center justify-center px-4 py-20">
+        <div className="w-full max-w-2xl">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4">
+              <Users className="w-8 h-8 text-white" />
             </div>
-          )}
+            <h1 className="text-3xl font-bold text-white mb-2">Faculty Registration</h1>
+            <p className="text-slate-400">Join as a faculty mentor to guide student projects</p>
+          </div>
 
-          {/* Error Message */}
-          {errorMessage && (
-            <div style={{
-              backgroundColor: '#FEE2E2',
-              color: '#991B1B',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.5rem',
-              marginBottom: '1rem',
-              fontSize: '0.8125rem',
-              fontFamily: theme.font.family,
-            }}>
-              {errorMessage}
-            </div>
-          )}
+          {/* Form Card */}
+          <div className="bg-slate-800 rounded-2xl shadow-xl border border-slate-700 p-8">
+            {/* Success Message */}
+            {successMessage && (
+              <div className="mb-6 p-4 bg-green-900/30 border border-green-700 rounded-xl flex items-start space-x-3">
+                <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-green-300">{successMessage}</p>
+              </div>
+            )}
 
-          <form onSubmit={handleSubmit} style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '1rem',
-          }}>
-            {/* ID */}
-            <div>
-              <label htmlFor="id" style={labelStyle}>ID</label>
-              <input
-                type="text"
-                id="id"
-                name="id"
-                value={formData.id}
-                onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.id ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.id) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.id ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-              {errors.id && <div style={errorTextStyle}>{errors.id}</div>}
-            </div>
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="mb-6 p-4 bg-red-900/30 border border-red-700 rounded-xl flex items-start space-x-3">
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-300">{errorMessage}</p>
+              </div>
+            )}
 
-            {/* Faculty ID */}
-            <div>
-              <label htmlFor="facultyid" style={labelStyle}>Faculty ID</label>
-              <input
-                type="text"
-                id="facultyid"
-                name="facultyid"
-                value={formData.facultyid}
-                onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.facultyid ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.facultyid) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.facultyid ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-              {errors.facultyid && <div style={errorTextStyle}>{errors.facultyid}</div>}
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Faculty ID */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Faculty ID
+                  </label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      name="facultyid"
+                      value={formData.facultyid}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="Enter Faculty ID"
+                    />
+                  </div>
+                  {errors.facultyid && (
+                    <p className="mt-1 text-sm text-red-400">{errors.facultyid}</p>
+                  )}
+                </div>
 
-            {/* Name */}
-            <div>
-              <label htmlFor="name" style={labelStyle}>Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.name ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.name) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.name ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-              {errors.name && <div style={errorTextStyle}>{errors.name}</div>}
-            </div>
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="Enter your name"
+                    />
+                  </div>
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-400">{errors.name}</p>
+                  )}
+                </div>
 
-            {/* Department */}
-            <div>
-              <label htmlFor="department" style={labelStyle}>Department</label>
-              <input
-                type="text"
-                id="department"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.department ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.department) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.department ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-              {errors.department && <div style={errorTextStyle}>{errors.department}</div>}
-            </div>
+                {/* Department */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Department
+                  </label>
+                  <div className="relative">
+                    <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="e.g., Computer Science"
+                    />
+                  </div>
+                  {errors.department && (
+                    <p className="mt-1 text-sm text-red-400">{errors.department}</p>
+                  )}
+                </div>
 
-            {/* Email */}
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label htmlFor="email" style={labelStyle}>Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.email ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.email) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.email ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-              {errors.email && <div style={errorTextStyle}>{errors.email}</div>}
-            </div>
+                {/* Email */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+                  )}
+                </div>
 
-            {/* Submit Button */}
-            <div style={{ gridColumn: '1 / -1' }}>
+                {/* Password */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="Enter a secure password (min 6 characters)"
+                    />
+                  </div>
+                  {errors.password && (
+                    <p className="mt-1 text-sm text-red-400">{errors.password}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading}
-                style={{
-                  width: '100%',
-                  backgroundColor: isLoading ? '#9CA3AF' : theme.colors.primary,
-                  color: 'white',
-                  padding: '0.625rem 1.25rem',
-                  borderRadius: '0.75rem',
-                  border: 'none',
-                  fontSize: '0.9375rem',
-                  fontWeight: theme.font.weights.medium,
-                  fontFamily: theme.font.family,
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading) {
-                    e.target.style.transform = 'scale(1.05)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'scale(1)';
-                }}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
               >
-                {isLoading ? (
-                  <>
-                    <svg
-                      className="animate-spin"
-                      style={{
-                        width: '1.125rem',
-                        height: '1.125rem',
-                        border: '2px solid rgba(255, 255, 255, 0.3)',
-                        borderTopColor: 'white',
-                        borderRadius: '50%',
-                      }}
-                    />
-                    <span>Registering...</span>
-                  </>
-                ) : (
-                  'Register Faculty'
-                )}
+                {isLoading ? 'Registering...' : 'Register Faculty'}
               </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -379,4 +253,3 @@ const RegisterFaculty = () => {
 };
 
 export default RegisterFaculty;
-

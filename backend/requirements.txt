@@ -11,4 +11,6 @@ psycopg2-binary
 numpy
 scikit-learn
 requests
+pymongo
+python-dotenv
 

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { GraduationCap, AlertCircle, CheckCircle, X, Lock } from 'lucide-react';
 import client from '../api/client';
 import Navbar from '../components/Navbar';
-import theme from '../theme';
 
 const RegisterStudent = () => {
   const [formData, setFormData] = useState({
-    id: '',
     usn: '',
     name: '',
     email: '',
+    password: '',
     department: '',
     cluster: '',
     semester: '',
@@ -103,7 +103,7 @@ const RegisterStudent = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    const requiredFields = ['id', 'usn', 'name', 'email', 'department', 'cluster', 'semester', 'resumelink', 'githublink'];
+    const requiredFields = ['usn', 'name', 'email', 'password', 'department', 'cluster', 'semester'];
     
     requiredFields.forEach(field => {
       if (!formData[field] || (typeof formData[field] === 'string' && !formData[field].trim())) {
@@ -117,6 +117,10 @@ const RegisterStudent = () => {
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
+    }
+
+    if (formData.password && formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
     }
 
     setErrors(newErrors);
@@ -150,10 +154,10 @@ const RegisterStudent = () => {
       setErrorMessage('');
       
       setFormData({
-        id: '',
         usn: '',
         name: '',
         email: '',
+        password: '',
         department: '',
         cluster: '',
         semester: '',
@@ -161,7 +165,7 @@ const RegisterStudent = () => {
         resumelink: '',
         githublink: '',
       });
-      setSelectedSkills([]);
+      setErrors({});
       setCustomSkill('');
       setErrors({});
     } catch (error) {
@@ -179,323 +183,201 @@ const RegisterStudent = () => {
     }
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '0.5rem 0.75rem',
-    borderRadius: '0.375rem',
-    border: '1px solid #D1D5DB',
-    fontSize: '0.8125rem',
-    fontFamily: theme.font.family,
-    transition: 'all 0.2s ease',
-    outline: 'none',
-  };
-
-  const inputFocusStyle = {
-    borderColor: theme.colors.primary,
-    boxShadow: `0 0 0 3px rgba(23, 92, 211, 0.1)`,
-  };
-
-  const labelStyle = {
-    display: 'block',
-    marginBottom: '0.25rem',
-    fontSize: '0.75rem',
-    fontWeight: theme.font.weights.medium,
-    color: theme.colors.text,
-    fontFamily: theme.font.family,
-  };
-
-  const errorTextStyle = {
-    color: theme.colors.error,
-    fontSize: '0.6875rem',
-    marginTop: '0.125rem',
-  };
-
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: theme.colors.background }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <Navbar />
-      <div style={{ 
-        paddingTop: '5rem', 
-        paddingBottom: '1rem',
-        paddingLeft: '1rem',
-        paddingRight: '1rem',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'flex-start',
-        minHeight: 'calc(100vh - 4rem)',
-      }}>
-        <div className="fade-up" style={{
-          maxWidth: '900px',
-          width: '100%',
-          backgroundColor: 'white',
-          borderRadius: '0.75rem',
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          padding: '1.5rem',
-          maxHeight: 'calc(100vh - 6rem)',
-          overflowY: 'auto',
-        }}>
-          <h1 style={{
-            fontFamily: theme.font.family,
-            fontSize: '1.75rem',
-            fontWeight: theme.font.weights.semibold,
-            color: theme.colors.text,
-            marginBottom: '1.5rem',
-            textAlign: 'center',
-          }}>
-            Register Student
-          </h1>
+      <div className="pt-20 pb-4 px-4 flex justify-center items-start min-h-[calc(100vh-4rem)]">
+        <div className="max-w-4xl w-full bg-slate-800 border border-slate-700 rounded-xl shadow-2xl p-6 max-h-[calc(100vh-6rem)] overflow-y-auto">
+          {/* Header */}
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <GraduationCap className="w-8 h-8 text-blue-400" />
+            <h1 className="text-3xl font-semibold text-white">
+              Register Student
+            </h1>
+          </div>
 
           {/* Success Message */}
           {successMessage && (
-            <div style={{
-              backgroundColor: '#D1FAE5',
-              color: '#065F46',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.5rem',
-              marginBottom: '1rem',
-              fontSize: '0.8125rem',
-              fontFamily: theme.font.family,
-            }}>
-              {successMessage}
+            <div className="bg-green-900/30 border border-green-700 text-green-300 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+              <CheckCircle className="w-5 h-5" />
+              <span>{successMessage}</span>
             </div>
           )}
 
           {/* Error Message */}
           {errorMessage && (
-            <div style={{
-              backgroundColor: '#FEE2E2',
-              color: '#991B1B',
-              padding: '0.5rem 0.75rem',
-              borderRadius: '0.5rem',
-              marginBottom: '1rem',
-              fontSize: '0.8125rem',
-              fontFamily: theme.font.family,
-            }}>
-              {errorMessage}
+            <div className="bg-red-900/30 border border-red-700 text-red-300 px-4 py-3 rounded-lg mb-4 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5" />
+              <span>{errorMessage}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, 1fr)',
-            gap: '1rem',
-          }}>
-            {/* ID */}
-            <div>
-              <label htmlFor="id" style={labelStyle}>ID</label>
-              <input
-                type="text"
-                id="id"
-                name="id"
-                value={formData.id}
-                onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.id ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.id) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.id ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
-              />
-              {errors.id && <div style={errorTextStyle}>{errors.id}</div>}
-            </div>
-
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* USN */}
             <div>
-              <label htmlFor="usn" style={labelStyle}>USN</label>
+              <label htmlFor="usn" className="block mb-1 text-sm font-medium text-slate-300">
+                USN
+              </label>
               <input
                 type="text"
                 id="usn"
                 name="usn"
                 value={formData.usn}
                 onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.usn ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.usn) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.usn ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
+                className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.usn ? 'border-red-500' : 'border-slate-600'
+                }`}
               />
-              {errors.usn && <div style={errorTextStyle}>{errors.usn}</div>}
+              {errors.usn && (
+                <div className="text-red-300 text-xs mt-1">{errors.usn}</div>
+              )}
             </div>
 
             {/* Name */}
             <div>
-              <label htmlFor="name" style={labelStyle}>Name</label>
+              <label htmlFor="name" className="block mb-1 text-sm font-medium text-slate-300">
+                Name
+              </label>
               <input
                 type="text"
                 id="name"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.name ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.name) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.name ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
+                className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.name ? 'border-red-500' : 'border-slate-600'
+                }`}
               />
-              {errors.name && <div style={errorTextStyle}>{errors.name}</div>}
+              {errors.name && (
+                <div className="text-red-300 text-xs mt-1">{errors.name}</div>
+              )}
             </div>
 
             {/* Email */}
             <div>
-              <label htmlFor="email" style={labelStyle}>Email</label>
+              <label htmlFor="email" className="block mb-1 text-sm font-medium text-slate-300">
+                Email
+              </label>
               <input
                 type="email"
                 id="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.email ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.email) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.email ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
+                className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.email ? 'border-red-500' : 'border-slate-600'
+                }`}
               />
-              {errors.email && <div style={errorTextStyle}>{errors.email}</div>}
+              {errors.email && (
+                <div className="text-red-300 text-xs mt-1">{errors.email}</div>
+              )}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label htmlFor="password" className="block mb-1 text-sm font-medium text-slate-300">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Min 6 characters"
+                  className={`w-full pl-10 px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    errors.password ? 'border-red-500' : 'border-slate-600'
+                  }`}
+                />
+              </div>
+              {errors.password && (
+                <div className="text-red-300 text-xs mt-1">{errors.password}</div>
+              )}
             </div>
 
             {/* Department */}
             <div>
-              <label htmlFor="department" style={labelStyle}>Department</label>
+              <label htmlFor="department" className="block mb-1 text-sm font-medium text-slate-300">
+                Department
+              </label>
               <input
                 type="text"
                 id="department"
                 name="department"
                 value={formData.department}
                 onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.department ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.department) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.department ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
+                className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.department ? 'border-red-500' : 'border-slate-600'
+                }`}
               />
-              {errors.department && <div style={errorTextStyle}>{errors.department}</div>}
+              {errors.department && (
+                <div className="text-red-300 text-xs mt-1">{errors.department}</div>
+              )}
             </div>
 
             {/* Cluster */}
             <div>
-              <label htmlFor="cluster" style={labelStyle}>Cluster</label>
+              <label htmlFor="cluster" className="block mb-1 text-sm font-medium text-slate-300">
+                Cluster
+              </label>
               <input
                 type="text"
                 id="cluster"
                 name="cluster"
                 value={formData.cluster}
                 onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.cluster ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.cluster) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.cluster ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
+                className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.cluster ? 'border-red-500' : 'border-slate-600'
+                }`}
               />
-              {errors.cluster && <div style={errorTextStyle}>{errors.cluster}</div>}
+              {errors.cluster && (
+                <div className="text-red-300 text-xs mt-1">{errors.cluster}</div>
+              )}
             </div>
 
             {/* Semester */}
             <div>
-              <label htmlFor="semester" style={labelStyle}>Semester</label>
+              <label htmlFor="semester" className="block mb-1 text-sm font-medium text-slate-300">
+                Semester
+              </label>
               <select
                 id="semester"
                 name="semester"
                 value={formData.semester}
                 onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.semester ? { borderColor: theme.colors.error } : {}),
-                  cursor: 'pointer',
-                }}
-                onFocus={(e) => {
-                  if (!errors.semester) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.semester ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
+                className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer ${
+                  errors.semester ? 'border-red-500' : 'border-slate-600'
+                }`}
               >
                 <option value="">Select Semester</option>
                 {[1, 2, 3, 4, 5, 6, 7, 8].map(num => (
                   <option key={num} value={num}>{num}</option>
                 ))}
               </select>
-              {errors.semester && <div style={errorTextStyle}>{errors.semester}</div>}
+              {errors.semester && (
+                <div className="text-red-300 text-xs mt-1">{errors.semester}</div>
+              )}
             </div>
 
             {/* Skills */}
             <div>
-              <label htmlFor="skills" style={labelStyle}>Skills</label>
-              <div ref={skillsDropdownRef} style={{ position: 'relative' }}>
+              <label htmlFor="skills" className="block mb-1 text-sm font-medium text-slate-300">
+                Skills
+              </label>
+              <div ref={skillsDropdownRef} className="relative">
                 <div
                   onClick={() => setSkillsDropdownOpen(!skillsDropdownOpen)}
-                  style={{
-                    ...inputStyle,
-                    ...(errors.skills ? { borderColor: theme.colors.error } : {}),
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
-                  onFocus={(e) => {
-                    if (!errors.skills) {
-                      Object.assign(e.target.style, inputFocusStyle);
-                    }
-                  }}
+                  className={`w-full px-3 py-2 rounded-md bg-slate-700 border cursor-pointer flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                    errors.skills ? 'border-red-500' : 'border-slate-600'
+                  }`}
                 >
-                  <span style={{ color: selectedSkills.length === 0 ? '#9CA3AF' : theme.colors.text }}>
+                  <span className={selectedSkills.length === 0 ? 'text-slate-400' : 'text-white'}>
                     {selectedSkills.length === 0 ? 'Select Skills (minimum 2 skills)' : `${selectedSkills.length} skill${selectedSkills.length !== 1 ? 's' : ''} selected`}
                   </span>
                   <svg
-                    style={{
-                      width: '1rem',
-                      height: '1rem',
-                      transform: skillsDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s ease',
-                    }}
+                    className={`w-4 h-4 transition-transform ${skillsDropdownOpen ? 'rotate-180' : ''}`}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -504,227 +386,115 @@ const RegisterStudent = () => {
                   </svg>
                 </div>
                 {skillsDropdownOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    marginTop: '0.25rem',
-                    backgroundColor: 'white',
-                    border: '1px solid #D1D5DB',
-                    borderRadius: '0.375rem',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    zIndex: 10,
-                  }}>
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-slate-700 border border-slate-600 rounded-md shadow-xl max-h-48 overflow-y-auto z-10">
                     {predefinedSkills.map(skill => (
                       <div
                         key={skill}
                         onClick={() => handleSkillSelect(skill)}
-                        style={{
-                          padding: '0.5rem 0.75rem',
-                          cursor: 'pointer',
-                          fontSize: '0.8125rem',
-                          fontFamily: theme.font.family,
-                          backgroundColor: selectedSkills.includes(skill) ? '#EFF6FF' : 'white',
-                          color: selectedSkills.includes(skill) ? theme.colors.primary : theme.colors.text,
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!selectedSkills.includes(skill)) {
-                            e.target.style.backgroundColor = '#F9FAFB';
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!selectedSkills.includes(skill)) {
-                            e.target.style.backgroundColor = 'white';
-                          }
-                        }}
+                        className={`px-3 py-2 cursor-pointer text-sm transition-colors ${
+                          selectedSkills.includes(skill) 
+                            ? 'bg-blue-600/20 text-blue-300' 
+                            : 'text-slate-300 hover:bg-slate-600'
+                        }`}
                       >
                         {skill}
                         {selectedSkills.includes(skill) && (
-                          <span style={{ marginLeft: '0.5rem', color: theme.colors.primary }}>✓</span>
+                          <span className="ml-2 text-blue-400">✓</span>
                         )}
                       </div>
                     ))}
-                    <div style={{
-                      padding: '0.5rem 0.75rem',
-                      borderTop: '1px solid #E5E7EB',
-                    }}>
+                    <div className="px-3 py-2 border-t border-slate-600">
                       <input
                         type="text"
                         placeholder="Add custom skill (press Enter)"
                         value={customSkill}
                         onChange={(e) => setCustomSkill(e.target.value)}
                         onKeyDown={handleAddCustomSkill}
-                        style={{
-                          width: '100%',
-                          padding: '0.375rem 0.5rem',
-                          border: '1px solid #D1D5DB',
-                          borderRadius: '0.25rem',
-                          fontSize: '0.8125rem',
-                          fontFamily: theme.font.family,
-                          outline: 'none',
-                        }}
-                        onFocus={(e) => {
-                          e.target.style.borderColor = theme.colors.primary;
-                        }}
-                        onBlur={(e) => {
-                          e.target.style.borderColor = '#D1D5DB';
-                        }}
+                        className="w-full px-2 py-1.5 bg-slate-600 border border-slate-500 rounded text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                 )}
               </div>
               {selectedSkills.length > 0 && (
-                <div style={{
-                  marginTop: '0.5rem',
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: '0.5rem',
-                  maxHeight: '100px',
-                  overflowY: 'auto',
-                }}>
+                <div className="mt-2 flex flex-wrap gap-2 max-h-24 overflow-y-auto">
                   {selectedSkills.map(skill => (
                     <div
                       key={skill}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.375rem',
-                        padding: '0.25rem 0.75rem',
-                        backgroundColor: '#E5E7EB',
-                        borderRadius: '9999px',
-                        fontSize: '0.75rem',
-                        fontFamily: theme.font.family,
-                        color: theme.colors.text,
-                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-600/20 border border-blue-500 rounded-full text-xs text-blue-300"
                     >
                       <span>{skill}</span>
                       <button
                         type="button"
                         onClick={() => handleRemoveSkill(skill)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          color: theme.colors.text,
-                          fontSize: '0.875rem',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.color = theme.colors.error;
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.color = theme.colors.text;
-                        }}
+                        className="hover:text-red-400 transition-colors"
                       >
-                        ×
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
                   ))}
                 </div>
               )}
-              {errors.skills && <div style={errorTextStyle}>{errors.skills}</div>}
+              {errors.skills && (
+                <div className="text-red-300 text-xs mt-1">{errors.skills}</div>
+              )}
             </div>
 
             {/* Resume Link */}
             <div>
-              <label htmlFor="resumelink" style={labelStyle}>Resume Link</label>
+              <label htmlFor="resumelink" className="block mb-1 text-sm font-medium text-slate-300">
+                Resume Link <span className="text-slate-400 text-xs">(Optional)</span>
+              </label>
               <input
                 type="url"
                 id="resumelink"
                 name="resumelink"
                 value={formData.resumelink}
                 onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.resumelink ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.resumelink) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.resumelink ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
+                className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.resumelink ? 'border-red-500' : 'border-slate-600'
+                }`}
               />
-              {errors.resumelink && <div style={errorTextStyle}>{errors.resumelink}</div>}
+              {errors.resumelink && (
+                <div className="text-red-300 text-xs mt-1">{errors.resumelink}</div>
+              )}
             </div>
 
             {/* GitHub Link */}
             <div>
-              <label htmlFor="githublink" style={labelStyle}>GitHub Link</label>
+              <label htmlFor="githublink" className="block mb-1 text-sm font-medium text-slate-300">
+                GitHub Link <span className="text-slate-400 text-xs">(Optional)</span>
+              </label>
               <input
                 type="url"
                 id="githublink"
                 name="githublink"
                 value={formData.githublink}
                 onChange={handleChange}
-                style={{
-                  ...inputStyle,
-                  ...(errors.githublink ? { borderColor: theme.colors.error } : {}),
-                }}
-                onFocus={(e) => {
-                  if (!errors.githublink) {
-                    Object.assign(e.target.style, inputFocusStyle);
-                  }
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = errors.githublink ? theme.colors.error : '#D1D5DB';
-                  e.target.style.boxShadow = 'none';
-                }}
+                className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                  errors.githublink ? 'border-red-500' : 'border-slate-600'
+                }`}
               />
-              {errors.githublink && <div style={errorTextStyle}>{errors.githublink}</div>}
+              {errors.githublink && (
+                <div className="text-red-300 text-xs mt-1">{errors.githublink}</div>
+              )}
             </div>
 
             {/* Submit Button - spans full width */}
-            <div style={{ gridColumn: '1 / -1' }}>
+            <div className="md:col-span-2">
               <button
                 type="submit"
                 disabled={isLoading}
-                style={{
-                  width: '100%',
-                  backgroundColor: isLoading ? '#9CA3AF' : theme.colors.primary,
-                  color: 'white',
-                  padding: '0.625rem 1.25rem',
-                  borderRadius: '0.75rem',
-                  border: 'none',
-                  fontSize: '0.9375rem',
-                  fontWeight: theme.font.weights.medium,
-                  fontFamily: theme.font.family,
-                  cursor: isLoading ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                }}
-                onMouseEnter={(e) => {
-                  if (!isLoading) {
-                    e.target.style.transform = 'scale(1.05)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'scale(1)';
-                }}
+                className={`w-full px-5 py-3 rounded-xl border-none text-base font-medium text-white transition-all duration-300 flex items-center justify-center gap-2 ${
+                  isLoading 
+                    ? 'bg-slate-600 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700 hover:scale-105'
+                }`}
               >
                 {isLoading ? (
                   <>
                     <svg
-                      className="animate-spin"
-                      style={{
-                        width: '1.125rem',
-                        height: '1.125rem',
-                        border: '2px solid rgba(255, 255, 255, 0.3)',
-                        borderTopColor: 'white',
-                        borderRadius: '50%',
-                      }}
+                      className="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
                     />
                     <span>Registering...</span>
                   </>

@@ -2,11 +2,14 @@
 from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+import bcrypt
+from datetime import datetime
 
 # adjust import paths to your project structure
 from database import SessionLocal  # get_db returns a Session; if not present see helper below
 from models import Students, TeamMembers, Teams  # your SQLAlchemy model class for students
 from schemas import StudentCreate, StudentResponse, StudentOut
+from mongodb import get_users_collection, get_resumes_collection
 
 
 router = APIRouter(prefix="/students", tags=["students"])
@@ -23,19 +26,60 @@ db_dependency = Annotated[Session, Depends(get_db)]
 
 @router.post("/register", response_model=StudentResponse, status_code=status.HTTP_201_CREATED)
 def register_student(payload: StudentCreate, db: db_dependency):
-    # Check for existing student by id or email (avoid duplicates)
+    # Generate ID if not provided
+    student_id = payload.id
+    if not student_id:
+        # Generate ID from USN or use a unique identifier
+        student_id = payload.usn
+    
+    # Check for existing student by id or email (avoid duplicates in SQLite)
     existing = db.query(Students).filter(
-        (Students.id == payload.id) | (Students.email == payload.email)
+        (Students.id == student_id) | (Students.email == payload.email)
     ).first()
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Student with this id or email already exists."
         )
+    
+    # Check for existing user in MongoDB
+    users_col = get_users_collection()
+    existing_user = users_col.find_one({"email": payload.email})
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered in the system."
+        )
 
-    # Create new Students instance
+    # Hash the password using bcrypt directly
+    password_bytes = payload.password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password_bytes, salt).decode('utf-8')
+    
+    # Save login credentials to MongoDB
+    user_doc = {
+        "user_id": student_id,
+        "email": payload.email,
+        "name": payload.name,
+        "password": hashed_password,
+        "user_type": "student",
+        "created_at": datetime.utcnow()
+    }
+    users_col.insert_one(user_doc)
+    
+    # Save resume link to MongoDB if provided
+    if payload.resumelink:
+        resumes_col = get_resumes_collection()
+        resume_doc = {
+            "student_id": student_id,
+            "resume_link": payload.resumelink,
+            "uploaded_at": datetime.utcnow()
+        }
+        resumes_col.insert_one(resume_doc)
+
+    # Create new Students instance for SQLite (without password)
     new_student = Students(
-        id=payload.id,
+        id=student_id,
         usn=payload.usn,
         name=payload.name,
         email=payload.email,

@@ -26,10 +26,11 @@ class StudentBase(BaseModel):
 
 class StudentCreate(StudentBase):
     """Schema for creating a new student (POST /students/register)."""
-    id: str = Field(..., example="stu123")
+    id: Optional[str] = Field(None, example="stu123")
     usn: str = Field(..., example="USN001")
     name: str = Field(..., example="Alice Example")
     email: EmailStr = Field(..., example="alice@example.com")
+    password: str = Field(..., example="securePassword123", min_length=6)
     department: Optional[str] = Field(None, example="CSE")
     cluster: Optional[str] = Field(None, example="AI")
     semester: Optional[str] = Field(None, example="6")
@@ -97,11 +98,12 @@ class FacultyBase(BaseModel):
 
 class FacultyCreate(FacultyBase):
     """Schema for creating a new faculty (POST /faculty/register)."""
-    id: str = Field(..., example="fac123")
+    id: Optional[str] = Field(None, example="fac123")
     facultyid: Optional[str] = Field(None, example="FAC001")
     name: str = Field(..., example="Dr. Raj Gupta")
     department: Optional[str] = Field(None, example="CSE")
     email: EmailStr = Field(..., example="raj.gupta@example.com")
+    password: str = Field(..., example="securePassword123", min_length=6)
 
 
 class FacultyUpdate(BaseModel):
