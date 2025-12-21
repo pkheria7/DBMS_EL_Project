@@ -115,8 +115,8 @@ const TeamForm = () => {
 
     try {
       const payload = {
-        teamname: teamName,
-        member_ids: selectedMembers.map(m => m.id),
+        team_name: teamName,
+        member_usns: selectedMembers.map(m => m.usn),
       };
 
       const response = await client.post('/teams/form', payload);

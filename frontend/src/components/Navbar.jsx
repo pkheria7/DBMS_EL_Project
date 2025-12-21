@@ -46,7 +46,7 @@ const Navbar = () => {
 
   return (
     <nav style={navbarStyle}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 1rem' }}>
+      <div style={{ padding: '0 1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '4rem' }}>
           {/* Logo */}
           <div style={{ flexShrink: 0 }}>

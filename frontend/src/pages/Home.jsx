@@ -77,7 +77,7 @@ const Home = () => {
                 href="/signup"
                 className="inline-flex items-center space-x-2 bg-slate-800 text-slate-200 px-8 py-4 rounded-xl font-semibold hover:bg-slate-700 transition-all duration-200 shadow-md hover:shadow-lg border border-slate-600"
               >
-                <span>Register Student</span>
+                <span>Register</span>
               </a>
             </div>
           </div>

@@ -11,12 +11,9 @@ const SubmitProject = () => {
   const [formData, setFormData] = useState({
     team_id: '',
     title: '',
-    description: '',
+    abstract: '',
     domain: '',
-    demovideolink: '',
-    year: '',
-    similarityscore: 0,
-    projectid: Math.floor(Math.random() * 9000) + 1000, // Random 4-digit (1000-9999)
+    report_link: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -72,9 +69,9 @@ const SubmitProject = () => {
       newErrors.title = 'Project title is required';
     }
 
-    if (formData.demovideolink && formData.demovideolink.trim()) {
-      if (!formData.demovideolink.startsWith('http://') && !formData.demovideolink.startsWith('https://')) {
-        newErrors.demovideolink = 'Demo video link must start with http:// or https://';
+    if (formData.report_link && formData.report_link.trim()) {
+      if (!formData.report_link.startsWith('http://') && !formData.report_link.startsWith('https://')) {
+        newErrors.report_link = 'Report link must start with http:// or https://';
       }
     }
 
@@ -95,12 +92,9 @@ const SubmitProject = () => {
       const payload = {
         team_id: parseInt(formData.team_id),
         title: formData.title.trim(),
-        description: formData.description.trim() || null,
-        domain: formData.domain.trim() || null,
-        demovideolink: formData.demovideolink.trim() || null,
-        year: formData.year || null,
-        similarityscore: 0,
-        projectid: formData.projectid,
+        abstract: formData.abstract.trim(),
+        domain: formData.domain.trim(),
+        report_link: formData.report_link.trim(),
       };
 
       const response = await client.post('/projects/', payload);
@@ -112,12 +106,9 @@ const SubmitProject = () => {
         setFormData({
           team_id: '',
           title: '',
-          description: '',
+          abstract: '',
           domain: '',
-          demovideolink: '',
-          year: '',
-          similarityscore: 0,
-          projectid: Math.floor(Math.random() * 9000) + 1000, // Generate new projectid
+          report_link: '',
         });
         setErrors({});
         
@@ -227,18 +218,19 @@ const SubmitProject = () => {
                 {errors.title && <div className="text-red-400 text-sm mt-1">{errors.title}</div>}
               </div>
 
-              {/* Description */}
+              {/* Abstract */}
               <div className="md:col-span-2">
-                <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-2">
-                  Description
+                <label htmlFor="abstract" className="block text-sm font-medium text-slate-300 mb-2">
+                  Abstract *
                 </label>
                 <textarea
-                  id="description"
-                  name="description"
-                  value={formData.description}
+                  id="abstract"
+                  name="abstract"
+                  value={formData.abstract}
                   onChange={handleChange}
                   rows={4}
-                  placeholder="Describe your project..."
+                  required
+                  placeholder="Provide a brief abstract of your project..."
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base resize-vertical"
                 />
               </div>
@@ -246,7 +238,7 @@ const SubmitProject = () => {
               {/* Domain */}
               <div>
                 <label htmlFor="domain" className="block text-sm font-medium text-slate-300 mb-2">
-                  Domain
+                  Domain *
                 </label>
                 <input
                   type="text"
@@ -254,48 +246,30 @@ const SubmitProject = () => {
                   name="domain"
                   value={formData.domain}
                   onChange={handleChange}
+                  required
                   placeholder="e.g., Web Development, AI/ML"
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base"
                 />
               </div>
 
-              {/* Demo Video Link */}
+              {/* Report Link */}
               <div>
-                <label htmlFor="demovideolink" className="block text-sm font-medium text-slate-300 mb-2">
-                  Demo Video Link
+                <label htmlFor="report_link" className="block text-sm font-medium text-slate-300 mb-2">
+                  Report Link *
                 </label>
                 <input
                   type="url"
-                  id="demovideolink"
-                  name="demovideolink"
-                  value={formData.demovideolink}
+                  id="report_link"
+                  name="report_link"
+                  value={formData.report_link}
                   onChange={handleChange}
+                  required
                   placeholder="https://..."
                   className={`w-full px-4 py-3 bg-slate-700 border rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base ${
-                    errors.demovideolink ? 'border-red-500' : 'border-slate-600'
+                    errors.report_link ? 'border-red-500' : 'border-slate-600'
                   }`}
                 />
-                {errors.demovideolink && <div className="text-red-400 text-sm mt-1">{errors.demovideolink}</div>}
-              </div>
-
-              {/* Year */}
-              <div className="md:col-span-2">
-                <label htmlFor="year" className="block text-sm font-medium text-slate-300 mb-2">
-                  Year
-                </label>
-                <select
-                  id="year"
-                  name="year"
-                  value={formData.year}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-base cursor-pointer"
-                >
-                  <option value="" className="bg-slate-700">Select year</option>
-                  <option value="2023" className="bg-slate-700">2023</option>
-                  <option value="2024" className="bg-slate-700">2024</option>
-                  <option value="2025" className="bg-slate-700">2025</option>
-                  <option value="2026" className="bg-slate-700">2026</option>
-                </select>
+                {errors.report_link && <div className="text-red-400 text-sm mt-1">{errors.report_link}</div>}
               </div>
 
               {/* Submit Button */}

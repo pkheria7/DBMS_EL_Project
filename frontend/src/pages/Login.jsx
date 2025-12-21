@@ -58,6 +58,16 @@ const Login = () => {
 
     setIsLoading(true);
 
+    // Check for admin credentials
+    if (formData.email === 'admin@gmail.com' && formData.password === 'adminadmin') {
+      localStorage.setItem('user', JSON.stringify({ email: 'admin@gmail.com', name: 'Admin' }));
+      localStorage.setItem('userId', 'admin');
+      localStorage.setItem('userType', 'admin');
+      navigate('/admin-dashboard');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await client.post('/api/auth/login', {
         email: formData.email,

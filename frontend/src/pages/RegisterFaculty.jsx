@@ -5,11 +5,12 @@ import Navbar from '../components/Navbar';
 
 const RegisterFaculty = () => {
   const [formData, setFormData] = useState({
-    facultyid: '',
     name: '',
-    department: '',
     email: '',
     password: '',
+    ph_no: '',
+    designation: '',
+    dept_id: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -35,7 +36,7 @@ const RegisterFaculty = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    const requiredFields = ['facultyid', 'name', 'department', 'email', 'password'];
+    const requiredFields = ['name', 'email', 'password', 'ph_no', 'designation', 'dept_id'];
     
     requiredFields.forEach(field => {
       if (!formData[field] || (typeof formData[field] === 'string' && !formData[field].trim())) {
@@ -74,11 +75,12 @@ const RegisterFaculty = () => {
       setErrorMessage('');
       
       setFormData({
-        facultyid: '',
         name: '',
-        department: '',
         email: '',
         password: '',
+        ph_no: '',
+        designation: '',
+        dept_id: '',
       });
       setErrors({});
     } catch (error) {
@@ -130,27 +132,6 @@ const RegisterFaculty = () => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Faculty ID */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Faculty ID
-                  </label>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                      type="text"
-                      name="facultyid"
-                      value={formData.facultyid}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="Enter Faculty ID"
-                    />
-                  </div>
-                  {errors.facultyid && (
-                    <p className="mt-1 text-sm text-red-400">{errors.facultyid}</p>
-                  )}
-                </div>
-
                 {/* Name */}
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
@@ -172,24 +153,66 @@ const RegisterFaculty = () => {
                   )}
                 </div>
 
-                {/* Department */}
+                {/* Phone Number */}
                 <div>
                   <label className="block text-sm font-medium text-slate-300 mb-2">
-                    Department
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      name="ph_no"
+                      value={formData.ph_no}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="e.g., 9876543210"
+                    />
+                  </div>
+                  {errors.ph_no && (
+                    <p className="mt-1 text-sm text-red-400">{errors.ph_no}</p>
+                  )}
+                </div>
+
+                {/* Designation */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Designation
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      name="designation"
+                      value={formData.designation}
+                      onChange={handleChange}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      placeholder="e.g., Associate Professor"
+                    />
+                  </div>
+                  {errors.designation && (
+                    <p className="mt-1 text-sm text-red-400">{errors.designation}</p>
+                  )}
+                </div>
+
+                {/* Department ID */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-300 mb-2">
+                    Department ID
                   </label>
                   <div className="relative">
                     <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
                     <input
                       type="text"
-                      name="department"
-                      value={formData.department}
+                      name="dept_id"
+                      value={formData.dept_id}
                       onChange={handleChange}
                       className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="e.g., Computer Science"
+                      placeholder="e.g., CSE"
                     />
                   </div>
-                  {errors.department && (
-                    <p className="mt-1 text-sm text-red-400">{errors.department}</p>
+                  {errors.dept_id && (
+                    <p className="mt-1 text-sm text-red-400">{errors.dept_id}</p>
                   )}
                 </div>
 

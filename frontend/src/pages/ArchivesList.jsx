@@ -28,7 +28,7 @@ const ArchivesList = () => {
 
   const fetchArchives = async () => {
     try {
-      const response = await client.get('/archives');
+      const response = await client.get('/archives/');
       setArchives(response.data);
     } catch (error) {
       setErrorMessage('Failed to load archives. Please try again.');

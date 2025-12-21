@@ -73,7 +73,7 @@ const FacultyDashboard = () => {
   };
 
   const handleUpdateProfile = () => {
-    navigate('/update-profile');
+    navigate('/update-faculty-profile');
   };
 
   if (loading) {
@@ -96,7 +96,7 @@ const FacultyDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header with Logout and Update Profile */}
       <div className="bg-slate-800/50 border-b border-slate-700 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
               <GraduationCap className="w-7 h-7 text-white" />
@@ -163,17 +163,6 @@ const FacultyDashboard = () => {
               </div>
               <p className="text-white font-medium text-lg break-all">{faculty.email}</p>
             </div>
-
-            {/* Department */}
-            {faculty.department && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-slate-400 text-sm">
-                  <Building className="w-4 h-4" />
-                  <span>Department</span>
-                </div>
-                <p className="text-white font-medium text-lg">{faculty.department}</p>
-              </div>
-            )}
           </div>
         </div>
 

@@ -26,7 +26,7 @@ const ProjectsList = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await client.get('/projects');
+      const response = await client.get('/projects/');
       setProjects(response.data);
     } catch (error) {
       setErrorMessage('Failed to load projects. Please try again.');

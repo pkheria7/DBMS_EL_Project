@@ -24,7 +24,7 @@ const TeamsList = () => {
 
   const fetchTeams = async () => {
     try {
-      const response = await client.get('/teams');
+      const response = await client.get('/teams/');
       setTeams(response.data);
     } catch (error) {
       setErrorMessage('Failed to load teams. Please try again.');

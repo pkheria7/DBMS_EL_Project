@@ -48,7 +48,7 @@ def login(payload: LoginRequest):
         )
     
     return {
-        "user_id": user["user_id"],
+        "user_id": str(user["user_id"]),
         "email": user["email"],
         "name": user["name"],
         "user_type": user["user_type"],
@@ -69,7 +69,7 @@ def get_current_user(email: str):
         )
     
     return {
-        "user_id": user["user_id"],
+        "user_id": str(user["user_id"]),
         "email": user["email"],
         "name": user["name"],
         "user_type": user["user_type"]

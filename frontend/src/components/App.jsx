@@ -8,6 +8,9 @@ import RegisterStudent from '../pages/RegisterStudent';
 import RegisterFaculty from '../pages/RegisterFaculty';
 import StudentDashboard from '../pages/StudentDashboard';
 import FacultyDashboard from '../pages/FacultyDashboard';
+import AdminDashboard from '../pages/AdminDashboard';
+import UpdateProfile from '../pages/UpdateProfile';
+import UpdateFacultyProfile from '../pages/UpdateFacultyProfile';
 import TeamForm from '../pages/TeamForm';
 import TeamsList from '../pages/TeamsList';
 import SubmitProject from '../pages/SubmitProject';
@@ -28,6 +31,9 @@ const App = () => {
         <Route path="/register-faculty" element={<RegisterFaculty />} />
         <Route path="/student-dashboard" element={<StudentDashboard />} />
         <Route path="/faculty-dashboard" element={<FacultyDashboard />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/update-profile" element={<UpdateProfile />} />
+        <Route path="/update-faculty-profile" element={<UpdateFacultyProfile />} />
         <Route path="/form-team" element={<TeamForm />} />
         <Route path="/teams" element={<TeamsList />} />
         <Route path="/submit-project" element={<SubmitProject />} />
