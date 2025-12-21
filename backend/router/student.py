@@ -77,6 +77,16 @@ def register_student(payload: StudentCreate, db: db_dependency):
         }
         resumes_col.insert_one(resume_doc)
 
+    # Convert skills array to comma-separated string if it's a list
+    skills_str = payload.skills
+    if isinstance(payload.skills, list):
+        skills_str = ','.join(payload.skills)
+    
+    # Convert semester to string if it's an integer
+    semester_str = payload.semester
+    if isinstance(payload.semester, int):
+        semester_str = str(payload.semester)
+    
     # Create new Students instance for SQLite (without password)
     new_student = Students(
         id=student_id,
@@ -85,8 +95,8 @@ def register_student(payload: StudentCreate, db: db_dependency):
         email=payload.email,
         department=payload.department,
         cluster=payload.cluster,
-        semester=payload.semester,
-        skills=payload.skills,
+        semester=semester_str,
+        skills=skills_str,
         resumelink=payload.resumelink,
         githublink=payload.githublink
     )

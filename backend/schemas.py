@@ -3,7 +3,7 @@ Pydantic schemas for the DBMS EL Project API.
 
 All request/response models are centralized here and organized by entity.
 """
-from typing import List, Optional
+from typing import List, Optional, Union
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 
@@ -33,8 +33,8 @@ class StudentCreate(StudentBase):
     password: str = Field(..., example="securePassword123", min_length=6)
     department: Optional[str] = Field(None, example="CSE")
     cluster: Optional[str] = Field(None, example="AI")
-    semester: Optional[str] = Field(None, example="6")
-    skills: Optional[str] = Field(None, example="python,sql,ml")
+    semester: Optional[Union[str, int]] = Field(None, example="6")
+    skills: Optional[Union[str, List[str]]] = Field(None, example="python,sql,ml")
     resumelink: Optional[str] = Field(None, example="/mnt/data/WhatsApp Image 2025-11-16 at 11.31.22 PM.jpeg")
     githublink: Optional[str] = Field(None, example="https://github.com/alice")
 
