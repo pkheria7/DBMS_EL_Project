@@ -39,7 +39,7 @@ class StudentUpdate(BaseModel):
     github: Optional[str] = None
     resume: Optional[str] = None
     dept_id: Optional[str] = None
-    team_id: Optional[int] = None
+    # team_id is NOT editable by students - excluded from schema
 
 
 class StudentResponse(BaseModel):
@@ -101,6 +101,10 @@ def update_student(usn: str, payload: StudentUpdate, db: DB):
             )
 
     update_data = payload.model_dump(exclude_unset=True)
+    # Explicitly exclude team_id and usn from updates (system-controlled fields)
+    update_data.pop('team_id', None)
+    update_data.pop('usn', None)
+    
     for key, value in update_data.items():
         setattr(student, key, value)
 

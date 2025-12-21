@@ -16,7 +16,6 @@ const UpdateProfile = () => {
     github: '',
     resume: '',
     dept_id: '',
-    team_id: '',
   });
   const [studentUsn, setStudentUsn] = useState('');
 
@@ -33,11 +32,20 @@ const UpdateProfile = () => {
 
   const fetchStudentDetails = async () => {
     try {
+      // userId in localStorage is the USN for students
       const userId = localStorage.getItem('userId');
+      if (!userId) {
+        toast.error('User ID not found');
+        navigate('/login');
+        return;
+      }
+
+      // Fetch student by USN using search endpoint
       const response = await client.get(`/students/search?query=${userId}`);
       
       if (response.data && response.data.length > 0) {
-        const student = response.data.find(s => s.id === userId) || response.data[0];
+        // Find exact USN match (search returns array)
+        const student = response.data.find(s => s.usn === userId) || response.data[0];
         setStudentUsn(student.usn);
         setFormData({
           name: student.name || '',
@@ -47,7 +55,6 @@ const UpdateProfile = () => {
           github: student.github || '',
           resume: student.resume || '',
           dept_id: student.dept_id || '',
-          team_id: student.team_id || 0,
         });
       }
     } catch (error) {
@@ -74,12 +81,11 @@ const UpdateProfile = () => {
       const payload = {
         name: formData.name.trim(),
         email: formData.email.trim(),
-        ph_no: formData.ph_no.trim(),
-        sem: parseInt(formData.sem),
-        github: formData.github.trim(),
-        resume: formData.resume.trim(),
+        ph_no: formData.ph_no.trim() || null,
+        sem: parseInt(formData.sem) || null,
+        github: formData.github.trim() || null,
+        resume: formData.resume.trim() || null,
         dept_id: formData.dept_id.trim(),
-        team_id: parseInt(formData.team_id) || 0,
       };
 
       const response = await client.put(`/profiles/students/${studentUsn}`, payload);
@@ -248,25 +254,6 @@ const UpdateProfile = () => {
                       required
                       className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       placeholder="e.g., CSE"
-                    />
-                  </div>
-                </div>
-
-                {/* Team ID */}
-                <div>
-                  <label htmlFor="team_id" className="block text-sm font-medium text-slate-300 mb-2">
-                    Team ID
-                  </label>
-                  <div className="relative">
-                    <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input
-                      type="number"
-                      id="team_id"
-                      name="team_id"
-                      value={formData.team_id}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                      placeholder="e.g., 0"
                     />
                   </div>
                 </div>

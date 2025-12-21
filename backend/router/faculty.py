@@ -61,6 +61,17 @@ class FacultySearchOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+# ============================================================================
+# GET ALL FACULTY
+# ============================================================================
+
+@router.get(
+    "/",
+    response_model=List[FacultySearchOut]
+)
+def get_all_faculty(db: db_dependency):
+    faculty_list = db.query(Faculty).all()
+    return faculty_list
 
 # ============================================================================
 # REGISTER FACULTY
@@ -134,30 +145,30 @@ def register_faculty(payload: FacultyCreate, db: db_dependency):
 # SEARCH FACULTY
 # ============================================================================
 
-# @router.get(
-#     "/search",
-#     response_model=List[FacultySearchOut]
-# )
-# def search_faculty(query: str, db: db_dependency):
-#     """
-#     Search faculty by:
-#     - faculty_id
-#     - name
-#     - email
-#     - designation
-#     """
-#     q = f"%{query.strip().lower()}%"
+@router.get(
+    "/search",
+    response_model=List[FacultySearchOut]
+)
+def search_faculty(query: str, db: db_dependency):
+    """
+    Search faculty by:
+    - faculty_id
+    - name
+    - email
+    - designation
+    """
+    q = f"%{query.strip().lower()}%"
 
-#     faculty_list = db.query(Faculty).filter(
-#         (Faculty.name.ilike(q)) |
-#         (Faculty.email.ilike(q)) |
-#         (Faculty.designation.ilike(q))
-#     ).all()
+    faculty_list = db.query(Faculty).filter(
+        (Faculty.name.ilike(q)) |
+        (Faculty.email.ilike(q)) |
+        (Faculty.designation.ilike(q))
+    ).all()
 
-#     if not faculty_list:
-#         raise HTTPException(
-#             status_code=404,
-#             detail="No matching faculty found."
-#         )
+    if not faculty_list:
+        raise HTTPException(
+            status_code=404,
+            detail="No matching faculty found."
+        )
 
-#     return faculty_list
+    return faculty_list

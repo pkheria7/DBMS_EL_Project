@@ -173,7 +173,7 @@ const StudentDashboard = () => {
                 <BookOpen className="w-4 h-4" />
                 <span>Department</span>
               </div>
-              <p className="text-white font-medium text-lg">{student.department}</p>
+              <p className="text-white font-medium text-lg">{student.dept_id || 'N/A'}</p>
             </div>
 
             {/* Cluster */}
@@ -182,7 +182,7 @@ const StudentDashboard = () => {
                 <Layers className="w-4 h-4" />
                 <span>Cluster</span>
               </div>
-              <p className="text-white font-medium text-lg">{student.cluster}</p>
+              <p className="text-white font-medium text-lg">{student.cluster || 'N/A'}</p>
             </div>
 
             {/* Semester */}
@@ -191,7 +191,7 @@ const StudentDashboard = () => {
                 <Calendar className="w-4 h-4" />
                 <span>Semester</span>
               </div>
-              <p className="text-white font-medium text-lg">{student.semester}</p>
+              <p className="text-white font-medium text-lg">{student.sem || 'N/A'}</p>
             </div>
           </div>
 

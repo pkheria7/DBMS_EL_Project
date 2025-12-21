@@ -193,12 +193,12 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {teams.map((team) => (
                   <div
-                    key={team.id}
+                    key={team.team_id}
                     className="group bg-slate-800 border border-slate-700 rounded-2xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-slate-600 relative overflow-hidden"
                   >
                     {/* Team Name */}
                     <h3 className="text-xl font-bold text-white mb-4 group-hover:text-indigo-400 transition-colors">
-                      {team.teamname || 'Unnamed Team'}
+                      {team.team_name || 'Unnamed Team'}
                     </h3>
 
                     {/* Cluster & Status */}
@@ -237,7 +237,7 @@ const AdminDashboard = () => {
 
                     {/* Assign Faculty Button */}
                     <button
-                      onClick={() => handleAssignFaculty(team.id)}
+                      onClick={() => handleAssignFaculty(team.team_id)}
                       className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
                     >
                       Assign Faculty

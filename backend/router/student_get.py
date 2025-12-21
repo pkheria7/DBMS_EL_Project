@@ -8,6 +8,20 @@ from models import Student
 
 router = APIRouter(prefix="/students", tags=["students"])
 
+# ============================================================================
+# CLUSTER MAPPING
+# ============================================================================
+
+CLUSTER_PARENT_MAP = {
+    "AI": "CSE", "CD": "CSE", "CS": "CSE", "CY": "CSE", "IS": "CSE",
+    "EC": "ECE", "EE": "ECE", "EI": "ECE", "ET": "ECE",
+    "AS": "ME", "IM": "ME", "ME": "ME",
+    "CV": "CV", "BT": "CV", "CH": "CV"
+}
+
+# Valid cluster names (in case dept_id is already a cluster)
+VALID_CLUSTERS = {"CSE", "ECE", "ME", "CV"}
+
 
 # ============================================================================
 # DATABASE DEPENDENCY
@@ -29,8 +43,12 @@ class StudentSearchOut(BaseModel):
     usn: str
     name: str
     email: EmailStr
+    ph_no: str | None
     sem: int | None
+    github: str | None
+    resume: str | None
     dept_id: str
+    cluster: str | None
     team_id: int | None
 
     model_config = ConfigDict(from_attributes=True)
@@ -62,4 +80,31 @@ def search_students(query: str, db: Session = Depends(get_db)):
             detail="No matching students found."
         )
 
-    return students
+    # Build response with cluster derivation
+    result = []
+    for student in students:
+        if not student.dept_id:
+            cluster = None
+        elif student.dept_id in VALID_CLUSTERS:
+            # dept_id is already a cluster name (CSE, ECE, ME, CV)
+            cluster = student.dept_id
+        else:
+            # Look up branch code in mapping
+            cluster = CLUSTER_PARENT_MAP.get(student.dept_id)
+        
+        result.append(
+            StudentSearchOut(
+                usn=student.usn,
+                name=student.name,
+                email=student.email,
+                ph_no=student.ph_no,
+                sem=student.sem,
+                github=student.github,
+                resume=student.resume,
+                dept_id=student.dept_id,
+                cluster=cluster,
+                team_id=student.team_id
+            )
+        )
+
+    return result

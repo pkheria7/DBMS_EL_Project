@@ -10,6 +10,20 @@ from models import Team, Student
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
+# ============================================================================
+# CLUSTER MAPPING
+# ============================================================================
+
+CLUSTER_PARENT_MAP = {
+    "AI": "CSE", "CD": "CSE", "CS": "CSE", "CY": "CSE", "IS": "CSE",
+    "EC": "ECE", "EE": "ECE", "EI": "ECE", "ET": "ECE",
+    "AS": "ME", "IM": "ME", "ME": "ME",
+    "CV": "CV", "BT": "CV", "CH": "CV"
+}
+
+# Valid cluster names (in case dept_id is already a cluster)
+VALID_CLUSTERS = {"CSE", "ECE", "ME", "CV"}
+
 
 # ============================================================================
 # DATABASE DEPENDENCY
@@ -41,6 +55,7 @@ class TeamOut(BaseModel):
     team_id: int
     team_name: str
     status: str
+    cluster: str | None
     members: List[StudentBrief]
 
     model_config = ConfigDict(from_attributes=True)
@@ -61,11 +76,26 @@ def get_all_teams(db: DB):
             Student.team_id == team.team_id
         ).all()
 
+        # Derive cluster from members' dept_id
+        # All members should be in the same cluster (validation rule)
+        cluster = None
+        if members:
+            # Get the first member's dept_id to determine cluster
+            first_dept_id = members[0].dept_id
+            if first_dept_id:
+                if first_dept_id in VALID_CLUSTERS:
+                    # dept_id is already a cluster name
+                    cluster = first_dept_id
+                else:
+                    # Look up branch code in mapping
+                    cluster = CLUSTER_PARENT_MAP.get(first_dept_id)
+
         result.append(
             TeamOut(
                 team_id=team.team_id,
                 team_name=team.team_name,
                 status=team.status,
+                cluster=cluster,
                 members=members
             )
         )

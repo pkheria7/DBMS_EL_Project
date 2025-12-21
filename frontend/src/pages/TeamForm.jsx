@@ -83,7 +83,8 @@ const TeamForm = () => {
       return;
     }
 
-    if (selectedMembers.some(m => m.id === student.id)) {
+    // Use USN for deduplication (unique identifier)
+    if (selectedMembers.some(m => m.usn === student.usn)) {
       toast.error('Student already added');
       return;
     }
@@ -94,8 +95,8 @@ const TeamForm = () => {
     setSearchResults([]);
   };
 
-  const handleRemoveMember = (studentId) => {
-    setSelectedMembers(selectedMembers.filter(m => m.id !== studentId));
+  const handleRemoveMember = (usn) => {
+    setSelectedMembers(selectedMembers.filter(m => m.usn !== usn));
   };
 
   const handleSubmit = async (e) => {
@@ -242,10 +243,11 @@ const TeamForm = () => {
                 {showDropdown && searchResults.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-slate-700 border border-slate-600 rounded-lg shadow-xl max-h-64 overflow-y-auto z-10">
                     {searchResults.map((student) => {
-                      const isSelected = selectedMembers.some(m => m.id === student.id);
+                      // Use USN for deduplication check
+                      const isSelected = selectedMembers.some(m => m.usn === student.usn);
                       return (
                         <div
-                          key={student.id}
+                          key={student.usn}
                           onClick={() => !isSelected && handleAddMember(student)}
                           className={`p-3 border-b border-slate-600 last:border-b-0 transition-colors ${
                             isSelected 
@@ -258,8 +260,12 @@ const TeamForm = () => {
                           </div>
                           <div className="text-sm text-slate-400 mt-1 flex items-center gap-2">
                             <span>{student.usn}</span>
-                            <span>•</span>
-                            <span>{student.id}</span>
+                            {student.dept_id && (
+                              <>
+                                <span>•</span>
+                                <span>{student.dept_id}</span>
+                              </>
+                            )}
                             {isSelected && (
                               <>
                                 <span>•</span>
@@ -283,13 +289,13 @@ const TeamForm = () => {
                   <div className="flex flex-wrap gap-2">
                     {selectedMembers.map((member) => (
                       <div
-                        key={member.id}
+                        key={member.usn}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full text-white text-sm font-medium"
                       >
                         <span>{member.name}</span>
                         <button
                           type="button"
-                          onClick={() => handleRemoveMember(member.id)}
+                          onClick={() => handleRemoveMember(member.usn)}
                           className="flex items-center justify-center w-5 h-5 rounded-full hover:bg-white/20 transition-colors"
                         >
                           <span className="text-lg leading-none">×</span>
