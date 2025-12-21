@@ -1,4 +1,5 @@
 # models.py
+import string
 from sqlalchemy import (
     Column,
     String,
@@ -37,10 +38,11 @@ bookmarks_table = Table(
 class Cluster(Base):
     __tablename__ = "cluster"
 
-    cluster_id = Column(Integer, primary_key=True, index=True)
+    cluster_id = Column(String, primary_key=True, index=True)
     cluster_name = Column(String(100), nullable=False)
 
     departments = relationship("Department", back_populates="cluster")
+
 
 
 
@@ -101,7 +103,7 @@ class Department(Base):
     dept_id = Column(String, primary_key=True, index=True)
     dept_name = Column(String(100), nullable=False)
 
-    cluster_id = Column(Integer, ForeignKey("cluster.cluster_id"))
+    cluster_id = Column(String, ForeignKey("cluster.cluster_id"))
 
     cluster = relationship("Cluster", back_populates="departments")
     students = relationship("Student", back_populates="department")
@@ -116,7 +118,7 @@ class Faculty(Base):
     ph_no = Column(String(15))
     designation = Column(String(50))
 
-    dept_id = Column(String, ForeignKey("department.dept_id"))
+    dept_id = Column(String(100), ForeignKey("department.dept_id"))
 
     department = relationship("Department", back_populates="faculty")
     mentored_teams = relationship(
