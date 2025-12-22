@@ -40,26 +40,36 @@ const UpdateProfile = () => {
         return;
       }
 
-      // Fetch student by USN using search endpoint
-      const response = await client.get(`/students/search?query=${userId}`);
+      setStudentUsn(userId);
+
+      // Fetch all students and find the one matching the USN
+      // This works even if student is in a team (search endpoint filters out students with teams)
+      const response = await client.get('/students/');
       
-      if (response.data && response.data.length > 0) {
-        // Find exact USN match (search returns array)
-        const student = response.data.find(s => s.usn === userId) || response.data[0];
-        setStudentUsn(student.usn);
-        setFormData({
-          name: student.name || '',
-          email: student.email || '',
-          ph_no: student.ph_no || '',
-          sem: student.sem || '',
-          github: student.github || '',
-          resume: student.resume || '',
-          dept_id: student.dept_id || '',
-        });
+      if (response.data && Array.isArray(response.data)) {
+        // Find exact USN match
+        const student = response.data.find(s => s.usn === userId);
+        
+        if (student) {
+          setFormData({
+            name: student.name || '',
+            email: student.email || '',
+            ph_no: student.ph_no || '',
+            sem: student.sem?.toString() || '',
+            github: student.github || '',
+            resume: student.resume || '',
+            dept_id: student.dept_id || '',
+          });
+        } else {
+          toast.error(`Student with USN ${userId} not found`);
+        }
+      } else {
+        toast.error('Invalid response format from server');
       }
     } catch (error) {
       console.error('Error fetching student details:', error);
-      toast.error('Failed to load student details');
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to load student details';
+      toast.error(`Failed to load student: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -75,6 +85,12 @@ const UpdateProfile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!studentUsn) {
+      toast.error('Student USN not found');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -82,7 +98,7 @@ const UpdateProfile = () => {
         name: formData.name.trim(),
         email: formData.email.trim(),
         ph_no: formData.ph_no.trim() || null,
-        sem: parseInt(formData.sem) || null,
+        sem: formData.sem ? parseInt(formData.sem) : null,
         github: formData.github.trim() || null,
         resume: formData.resume.trim() || null,
         dept_id: formData.dept_id.trim(),
@@ -97,11 +113,9 @@ const UpdateProfile = () => {
         }, 1000);
       }
     } catch (error) {
-      if (error.response?.data?.detail) {
-        toast.error(error.response.data.detail);
-      } else {
-        toast.error('Failed to update profile. Please try again.');
-      }
+      console.error('Error updating profile:', error);
+      const errorMessage = error.response?.data?.detail || error.response?.statusText || error.message || 'Failed to update profile';
+      toast.error(`Update failed: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }

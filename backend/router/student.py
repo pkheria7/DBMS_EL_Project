@@ -63,6 +63,11 @@ class StudentOut(BaseModel):
     name: str
     email: EmailStr
     dept_id: str
+    ph_no: Optional[str] = None
+    sem: Optional[int] = None
+    github: Optional[str] = None
+    resume: Optional[str] = None
+    cluster: Optional[str] = None
     is_in_active_team: bool
 
     model_config = ConfigDict(from_attributes=True)
@@ -151,6 +156,20 @@ def register_student(payload: StudentCreate, db: DB):
 
 
 # ============================================================================
+# CLUSTER MAPPING
+# ============================================================================
+
+CLUSTER_PARENT_MAP = {
+    "AI": "CSE", "CD": "CSE", "CS": "CSE", "CY": "CSE", "IS": "CSE", "ISE": "CSE",
+    "EC": "ECE", "EE": "ECE", "EI": "ECE", "ET": "ECE",
+    "AS": "ME", "IM": "ME", "ME": "ME",
+    "CV": "CV", "BT": "CV", "CH": "CV"
+}
+
+VALID_CLUSTERS = {"CSE", "ECE", "ME", "CV"}
+
+
+# ============================================================================
 # GET ALL STUDENTS (WITH ACTIVE TEAM FLAG)
 # ============================================================================
 
@@ -166,12 +185,25 @@ def get_all_students(db: DB):
 
     result = []
     for stu in students:
+        # Derive cluster from dept_id
+        cluster = None
+        if stu.dept_id:
+            if stu.dept_id in VALID_CLUSTERS:
+                cluster = stu.dept_id
+            else:
+                cluster = CLUSTER_PARENT_MAP.get(stu.dept_id)
+        
         result.append(
             StudentOut(
                 usn=stu.usn,
                 name=stu.name,
                 email=stu.email,
                 dept_id=stu.dept_id,
+                ph_no=stu.ph_no,
+                sem=stu.sem,
+                github=stu.github,
+                resume=stu.resume,
+                cluster=cluster,
                 is_in_active_team=stu.team_id in active_team_ids
             )
         )
@@ -185,7 +217,7 @@ def get_all_students(db: DB):
     response_model=List[StudentOut],
     summary="Search students by USN, name, or email"
 )
-def search_students(query: str, db: Session = Depends(get_db)):
+def search_students(query: str, db: DB):
 
     q = f"%{query.strip().lower()}%"
 
@@ -202,14 +234,32 @@ def search_students(query: str, db: Session = Depends(get_db)):
             detail="No matching students found."
         )
 
+    # Active teams
+    active_team_ids = {
+        t.team_id for t in db.query(Team).filter(Team.status == "active").all()
+    }
+
     result = []
     for stu in students:
+        # Derive cluster from dept_id
+        cluster = None
+        if stu.dept_id:
+            if stu.dept_id in VALID_CLUSTERS:
+                cluster = stu.dept_id
+            else:
+                cluster = CLUSTER_PARENT_MAP.get(stu.dept_id)
+        
         result.append(
             StudentOut(
                 usn=stu.usn,
                 name=stu.name,
                 email=stu.email,
                 dept_id=stu.dept_id,
+                ph_no=stu.ph_no,
+                sem=stu.sem,
+                github=stu.github,
+                resume=stu.resume,
+                cluster=cluster,
                 is_in_active_team=stu.team_id in active_team_ids
             )
         )
