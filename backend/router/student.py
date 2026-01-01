@@ -72,7 +72,10 @@ class StudentOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-
+class NoteamStudentSearch(BaseModel):
+    sem : int
+    cluster : str
+    query : Optional[str]
 # ============================================================================
 # REGISTER STUDENT
 # ============================================================================
@@ -210,6 +213,58 @@ def get_all_students(db: DB):
 
     return result
 
+@router.post(
+    "/no-team",
+    response_model=List[StudentOut],
+    summary="Get all students without a team and in the same cluster and semester"
+)
+def get_students_without_team(
+    payload: NoteamStudentSearch,
+    db: DB
+):
+
+    # Fetch students without a team
+    q = f"%{payload.query.strip().lower()}%"
+    students = db.query(Student).filter(
+        (Student.team_id == None) & (Student.sem == payload.sem) &
+        ((Student.usn.ilike(q)) |
+         (Student.name.ilike(q)) |
+         (Student.email.ilike(q)))
+    ).all()
+
+    # Active teams
+    active_team_ids = {
+        t.team_id for t in db.query(Team).filter(Team.status == "active").all()
+    }
+
+    result = []
+    for stu in students:
+        # Derive cluster from dept_id
+        derived_cluster = None
+        if stu.dept_id:
+            if stu.dept_id in VALID_CLUSTERS:
+                derived_cluster = stu.dept_id
+            else:
+                derived_cluster = CLUSTER_PARENT_MAP.get(stu.dept_id)
+        
+        # Check if the student's cluster matches the input cluster
+        if derived_cluster == payload.cluster:
+            result.append(
+                StudentOut(
+                    usn=stu.usn,
+                    name=stu.name,
+                    email=stu.email,
+                    dept_id=stu.dept_id,
+                    ph_no=stu.ph_no,
+                    sem=stu.sem,
+                    github=stu.github,
+                    resume=stu.resume,
+                    cluster=derived_cluster,
+                    is_in_active_team=stu.team_id in active_team_ids
+                )
+            )
+
+    return result
 
 
 @router.get(
@@ -224,8 +279,7 @@ def search_students(query: str, db: DB):
     students = db.query(Student).filter(
         ((Student.usn.ilike(q)) |
          (Student.name.ilike(q)) |
-         (Student.email.ilike(q))) &
-        (Student.team_id == None)
+         (Student.email.ilike(q)))
     ).all()
 
     if not students:
@@ -234,10 +288,7 @@ def search_students(query: str, db: DB):
             detail="No matching students found."
         )
 
-    # Active teams
-    active_team_ids = {
-        t.team_id for t in db.query(Team).filter(Team.status == "active").all()
-    }
+    
 
     result = []
     for stu in students:
@@ -260,7 +311,7 @@ def search_students(query: str, db: DB):
                 github=stu.github,
                 resume=stu.resume,
                 cluster=cluster,
-                is_in_active_team=stu.team_id in active_team_ids
+                is_in_active_team=stu.team_id is not None
             )
         )
 

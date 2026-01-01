@@ -155,3 +155,4 @@ def get_student_team(usn: str, db: DB):
             members=[StudentBrief(usn=m.usn, name=m.name, email=m.email) for m in members]
         )
     ]
+

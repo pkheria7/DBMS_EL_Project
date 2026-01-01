@@ -19,6 +19,10 @@ app.add_middleware(
 # create database tables
 models.Base.metadata.create_all(bind=engine)
 
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the Team Management API"}
+
 # include routers
 app.include_router(auth.router)
 app.include_router(student.router)
