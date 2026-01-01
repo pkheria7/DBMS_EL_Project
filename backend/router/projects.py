@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from database import SessionLocal
 from models import Project, Team, Archive
+import math
 
 router = APIRouter(prefix="/projects", tags=["projects"])
 
@@ -261,3 +262,66 @@ def archive_project(project_id: int, db: DB):
         ) from e
 
     return new_archive
+
+
+@router.put('/phase1/{project_id}', response_model=ProjectResponse)
+def get_phase1_project(project_id: int, marks : int,db: DB):
+
+    project = db.query(Project).filter(
+        Project.project_id == project_id
+    ).first()
+
+    if not project:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Project with id {project_id} not found."
+        )
+    
+    project.marks = marks
+    try:
+        # Commit the changes to the database
+        db.commit()
+        # Refresh the project instance to reflect the updated state
+        db.refresh(project)
+    except Exception as e:
+        # Rollback in case of any database error
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Database error while updating project marks."
+        ) from e
+
+    # Return the updated project
+    return project
+
+
+@router.put('/phase2/{project_id}', response_model=ProjectResponse)
+def get_phase2_project(project_id: int, marks : int,db: DB):
+
+    project = db.query(Project).filter(
+        Project.project_id == project_id
+    ).first()
+
+    if not project:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Project with id {project_id} not found."
+        )
+    
+    current_marks = project.marks if project.marks else 0
+    project.marks = math.ceil(current_marks * 0.4 + marks * 0.6)
+    try:
+        # Commit the changes to the database
+        db.commit()
+        # Refresh the project instance to reflect the updated state
+        db.refresh(project)
+    except Exception as e:
+        # Rollback in case of any database error
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="Database error while updating project marks."
+        ) from e
+
+    # Return the updated project
+    return project
