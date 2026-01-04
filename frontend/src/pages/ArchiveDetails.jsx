@@ -6,6 +6,7 @@ import client from '../api/client';
 const ArchiveDetails = () => {
   const navigate = useNavigate();
   const [archive, setArchive] = useState(null);
+  const [project, setProject] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [userType, setUserType] = useState('');
@@ -31,8 +32,18 @@ const ArchiveDetails = () => {
 
   const fetchArchive = async () => {
     try {
-      const response = await client.get(`/archives/${archiveId}`);
-      setArchive(response.data);
+      const archiveResponse = await client.get(`/archives/${archiveId}`);
+      setArchive(archiveResponse.data);
+      
+      // Fetch project details using project_id from archive
+      if (archiveResponse.data.project_id) {
+        try {
+          const projectResponse = await client.get(`/projects/${archiveResponse.data.project_id}`);
+          setProject(projectResponse.data);
+        } catch (projectError) {
+          console.error('Error fetching project details:', projectError);
+        }
+      }
     } catch (error) {
       setErrorMessage('Failed to load archive details. Please try again.');
       console.error('Error fetching archive:', error);
@@ -90,7 +101,7 @@ const ArchiveDetails = () => {
             <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8 mb-6 shadow-xl">
               <div className="flex justify-between items-start mb-4">
                 <h1 className="text-3xl md:text-4xl font-bold text-white pr-4">
-                  {archive.projecttitle || 'Untitled Project'}
+                  {archive.title || 'Untitled Project'}
                 </h1>
                 <span className="px-4 py-2 bg-yellow-900/50 border border-yellow-700 text-yellow-200 rounded-full text-sm font-medium whitespace-nowrap">
                   Archived
@@ -98,16 +109,16 @@ const ArchiveDetails = () => {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                {archive.domain && (
+                {archive.sem && (
                   <div className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 border border-blue-500 text-blue-300 rounded-lg">
-                    <Tag className="w-4 h-4" />
-                    <span className="font-medium">{archive.domain}</span>
+                    <Calendar className="w-4 h-4" />
+                    <span className="font-medium">Semester {archive.sem}</span>
                   </div>
                 )}
-                {archive.year && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-700 border border-slate-600 text-slate-300 rounded-lg">
-                    <Calendar className="w-4 h-4" />
-                    <span>{archive.year}</span>
+                {project?.domain && (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 border border-purple-500 text-purple-300 rounded-lg">
+                    <Tag className="w-4 h-4" />
+                    <span className="font-medium">{project.domain}</span>
                   </div>
                 )}
               </div>
@@ -121,33 +132,60 @@ const ArchiveDetails = () => {
               </h2>
 
               <div className="space-y-6">
-                {archive.archiveid && (
+                {archive.archive_id && (
                   <div>
                     <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
                       <Hash className="w-4 h-4" />
                       <span>Archive ID</span>
                     </div>
-                    <p className="text-white text-lg font-medium">{archive.archiveid}</p>
+                    <p className="text-white text-lg font-medium">{archive.archive_id}</p>
                   </div>
                 )}
 
-                {archive.project_id && (
+                {archive.sem && (
                   <div>
                     <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
-                      <Hash className="w-4 h-4" />
-                      <span>Original Project ID</span>
+                      <Calendar className="w-4 h-4" />
+                      <span>Semester</span>
                     </div>
-                    <p className="text-white text-lg font-medium">{archive.project_id}</p>
+                    <p className="text-white text-lg font-medium">Semester {archive.sem}</p>
                   </div>
                 )}
 
-                {archive.contactinfo && (
+                {project?.domain && (
                   <div>
                     <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
-                      <Mail className="w-4 h-4" />
-                      <span>Contact Information</span>
+                      <Tag className="w-4 h-4" />
+                      <span>Domain</span>
                     </div>
-                    <p className="text-white text-lg">{archive.contactinfo}</p>
+                    <p className="text-white text-lg font-medium">{project.domain}</p>
+                  </div>
+                )}
+
+                {archive.abstract && (
+                  <div>
+                    <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+                      <FileText className="w-4 h-4" />
+                      <span>Abstract</span>
+                    </div>
+                    <p className="text-white text-lg">{archive.abstract}</p>
+                  </div>
+                )}
+
+                {archive.report_link && (
+                  <div>
+                    <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+                      <FileText className="w-4 h-4" />
+                      <span>Drive link (Report + PPT + Demo)</span>
+                    </div>
+                    <a
+                      href={archive.report_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:text-blue-300 text-lg break-all"
+                    >
+                      {archive.report_link}
+                    </a>
                   </div>
                 )}
               </div>

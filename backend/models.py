@@ -147,6 +147,7 @@ class Archive(Base):
     __tablename__ = "archive"
 
     archive_id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey("project.project_id"))
     title = Column(String(200), nullable=False)
     sem = Column(Integer)
     abstract = Column(Text)

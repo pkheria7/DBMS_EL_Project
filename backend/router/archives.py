@@ -31,6 +31,7 @@ DB = Annotated[Session, Depends(get_db)]
 
 class ArchiveResponse(BaseModel):
     archive_id: int
+    project_id: Optional[int]
     title: str
     sem: Optional[int]
     abstract: Optional[str]

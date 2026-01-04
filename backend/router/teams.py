@@ -12,6 +12,20 @@ router = APIRouter(prefix="/teams", tags=["teams"])
 
 
 # ============================================================================
+# CLUSTER MAPPING (same as student endpoints)
+# ============================================================================
+
+CLUSTER_PARENT_MAP = {
+    "AI": "CSE", "CD": "CSE", "CS": "CSE", "CY": "CSE", "IS": "CSE",
+    "EC": "ECE", "EE": "ECE", "EI": "ECE", "ET": "ECE",
+    "AS": "ME", "IM": "ME", "ME": "ME",
+    "CV": "CV", "BT": "CV", "CH": "CV"
+}
+
+VALID_CLUSTERS = {"CSE", "ECE", "ME", "CV"}
+
+
+# ============================================================================
 # DATABASE DEPENDENCY
 # ============================================================================
 
@@ -50,16 +64,19 @@ class TeamOut(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-from models import Department  # Import the Department model
 
-def parent_cluster(dept_id: str, db: Session) -> str | None:
+def parent_cluster(dept_id: str) -> str | None:
     """
-    Fetch the cluster_id for a given dept_id from the Department table.
+    Derive cluster from dept_id using the same logic as student endpoints.
     """
-    department = db.query(Department).filter(Department.dept_id == dept_id).first()
-    if department:
-        return department.cluster_id
-    return None
+    if not dept_id:
+        return None
+    elif dept_id in VALID_CLUSTERS:
+        # dept_id is already a cluster name (CSE, ECE, ME, CV)
+        return dept_id
+    else:
+        # Look up branch code in mapping
+        return CLUSTER_PARENT_MAP.get(dept_id)
 
 # ============================================================================
 # FORM TEAM

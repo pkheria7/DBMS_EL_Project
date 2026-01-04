@@ -29,7 +29,25 @@ const ArchivesList = () => {
   const fetchArchives = async () => {
     try {
       const response = await client.get('/archives/');
-      setArchives(response.data);
+      const archivesData = response.data;
+      
+      // Fetch project details for each archive to get domain information
+      const archivesWithProjects = await Promise.all(
+        archivesData.map(async (archive) => {
+          if (archive.project_id) {
+            try {
+              const projectResponse = await client.get(`/projects/${archive.project_id}`);
+              return { ...archive, project: projectResponse.data };
+            } catch (projectError) {
+              console.error(`Error fetching project ${archive.project_id}:`, projectError);
+              return archive;
+            }
+          }
+          return archive;
+        })
+      );
+      
+      setArchives(archivesWithProjects);
     } catch (error) {
       setErrorMessage('Failed to load archives. Please try again.');
       console.error('Error fetching archives:', error);
@@ -39,9 +57,9 @@ const ArchivesList = () => {
   };
 
   const filteredArchives = archives.filter(archive => {
-    const matchesDomain = !filterDomain || archive.domain?.toLowerCase().includes(filterDomain.toLowerCase());
-    const matchesYear = !filterYear || archive.year?.toString() === filterYear;
-    return matchesDomain && matchesYear;
+    const matchesTitle = !filterDomain || archive.title?.toLowerCase().includes(filterDomain.toLowerCase());
+    const matchesDomain = !filterYear || archive.project?.domain?.toLowerCase().includes(filterYear.toLowerCase());
+    return matchesTitle && matchesDomain;
   });
 
   const handleBack = () => {
@@ -96,15 +114,15 @@ const ArchivesList = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-                <Tag className="w-4 h-4" />
-                Filter by Domain
+                <Search className="w-4 h-4" />
+                Search Projects
               </label>
               <div className="relative">
                 <input
                   type="text"
                   value={filterDomain}
                   onChange={(e) => setFilterDomain(e.target.value)}
-                  placeholder="e.g., AI, Web, Mobile"
+                  placeholder="Search by project title..."
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all text-base"
                 />
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -113,15 +131,15 @@ const ArchivesList = () => {
 
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
-                <Calendar className="w-4 h-4" />
-                Filter by Year
+                <Tag className="w-4 h-4" />
+                Filter by Domain
               </label>
               <div className="relative">
                 <input
                   type="text"
                   value={filterYear}
                   onChange={(e) => setFilterYear(e.target.value)}
-                  placeholder="e.g., 2024"
+                  placeholder="e.g., AI/ML, Web Development, IoT"
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all text-base"
                 />
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -165,9 +183,9 @@ const ArchivesList = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredArchives.map((archive) => (
               <div
-                key={archive.id}
+                key={archive.archive_id}
                 className="group bg-slate-800 border border-slate-700 rounded-2xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-slate-600 cursor-pointer relative overflow-hidden"
-                onClick={() => navigate(`/archives/${archive.id}`)}
+                onClick={() => navigate(`/archives/${archive.archive_id}`)}
               >
                 {/* Archived Badge */}
                 <div className="absolute top-4 right-4 px-3 py-1 bg-yellow-900/50 border border-yellow-700 text-yellow-200 rounded-full text-xs font-medium">
@@ -176,27 +194,27 @@ const ArchivesList = () => {
 
                 {/* Project Title */}
                 <h3 className="text-xl font-bold text-white mb-3 pr-20 line-clamp-2 group-hover:text-blue-400 transition-colors">
-                  {archive.projecttitle || 'Untitled Project'}
+                  {archive.title || 'Untitled Project'}
                 </h3>
 
                 {/* Meta Information */}
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {archive.domain && (
+                  {archive.sem && (
                     <span className="px-3 py-1 bg-blue-600/20 border border-blue-500 text-blue-300 rounded-full text-xs font-medium">
-                      {archive.domain}
+                      Semester {archive.sem}
                     </span>
                   )}
-                  {archive.year && (
-                    <span className="px-3 py-1 bg-slate-700 border border-slate-600 text-slate-300 rounded-full text-xs">
-                      {archive.year}
+                  {archive.project?.domain && (
+                    <span className="px-3 py-1 bg-purple-600/20 border border-purple-500 text-purple-300 rounded-full text-xs font-medium">
+                      {archive.project.domain}
                     </span>
                   )}
                 </div>
 
-                {/* Contact Info */}
-                {archive.contactinfo && (
+                {/* Abstract Preview */}
+                {archive.abstract && (
                   <div className="text-sm text-slate-400 mb-4 line-clamp-2">
-                    Contact: {archive.contactinfo}
+                    {archive.abstract}
                   </div>
                 )}
 

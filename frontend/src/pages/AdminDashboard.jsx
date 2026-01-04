@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, LogOut, UserCheck, ArrowLeft, Mail, Phone, Briefcase, Building2, Search, X, Check } from 'lucide-react';
+import { Users, GraduationCap, LogOut, UserCheck, ArrowLeft, Mail, Phone, Briefcase, Building2, Search, X, Check, User } from 'lucide-react';
 import client from '../api/client';
 import toast from 'react-hot-toast';
 
@@ -43,7 +43,44 @@ const AdminDashboard = () => {
     setIsLoadingTeams(true);
     try {
       const response = await client.get('/teams/');
-      setTeams(response.data || []);
+      const teamsData = response.data || [];
+      
+      // Fetch all faculty first
+      const facultyResponse = await client.get('/faculty/');
+      const allFaculty = facultyResponse.data || [];
+      
+      // For each faculty, get their assigned teams to build a reverse mapping
+      const teamToMentorsMap = new Map();
+      
+      await Promise.all(
+        allFaculty.map(async (facultyMember) => {
+          try {
+            const teamsResponse = await client.get(`/faculty/${facultyMember.faculty_id}/teams`);
+            const assignedTeams = teamsResponse.data || [];
+            
+            // For each team this faculty is assigned to, add them to the map
+            assignedTeams.forEach((assignedTeam) => {
+              if (!teamToMentorsMap.has(assignedTeam.team_id)) {
+                teamToMentorsMap.set(assignedTeam.team_id, []);
+              }
+              teamToMentorsMap.get(assignedTeam.team_id).push(facultyMember);
+            });
+          } catch (error) {
+            // If 404, this faculty has no teams assigned
+            if (error.response?.status !== 404) {
+              console.error(`Error fetching teams for faculty ${facultyMember.faculty_id}:`, error);
+            }
+          }
+        })
+      );
+      
+      // Add mentor information to each team
+      const teamsWithMentors = teamsData.map(team => ({
+        ...team,
+        mentors: teamToMentorsMap.get(team.team_id) || []
+      }));
+      
+      setTeams(teamsWithMentors);
     } catch (error) {
       console.error('Error fetching teams:', error);
     } finally {
@@ -177,8 +214,8 @@ const AdminDashboard = () => {
       toast.success('Faculty assigned successfully!');
       handleCloseModal();
       
-      // Optionally refresh teams to show updated assignments
-      // You could add mentor info to team cards here if needed
+      // Refresh teams to show updated assignments
+      handleViewTeams();
     } catch (error) {
       if (error.response?.data?.detail) {
         toast.error(error.response.data.detail);
@@ -310,7 +347,8 @@ const AdminDashboard = () => {
                 {faculty.map((facultyMember) => (
                   <div
                     key={facultyMember.faculty_id}
-                    className="group bg-slate-800 border border-slate-700 rounded-2xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-slate-600 relative overflow-hidden"
+                    onClick={() => navigate(`/faculty-details/${facultyMember.faculty_id}`)}
+                    className="group bg-slate-800 border border-slate-700 rounded-2xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-slate-600 relative overflow-hidden cursor-pointer"
                   >
                     {/* Faculty Name */}
                     <h3 className="text-xl font-bold text-white mb-4 group-hover:text-blue-400 transition-colors">
@@ -432,13 +470,33 @@ const AdminDashboard = () => {
                       </div>
                     </div>
 
-                    {/* Assign Faculty Button */}
-                    <button
-                      onClick={() => handleAssignFaculty(team.team_id)}
-                      className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
-                    >
-                      Assign Faculty
-                    </button>
+                    {/* Assign Faculty Button or Assigned Faculty Display */}
+                    {team.mentors && team.mentors.length >= 2 ? (
+                      <div className="mt-4 pt-4 border-t border-slate-700">
+                        <div className="flex items-center gap-2 text-slate-400 text-sm mb-3">
+                          <Users className="w-4 h-4" />
+                          <span className="font-medium">Assigned Faculty</span>
+                        </div>
+                        <div className="space-y-2">
+                          {team.mentors.slice(0, 2).map((mentor, idx) => (
+                            <div
+                              key={idx}
+                              className="flex items-center gap-2 px-3 py-2 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg text-sm"
+                            >
+                              <User className="w-4 h-4" />
+                              <span className="font-medium">{mentor.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleAssignFaculty(team.team_id)}
+                        className="w-full mt-4 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+                      >
+                        Assign Faculty
+                      </button>
+                    )}
 
                     {/* Hover effect overlay */}
                     <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>

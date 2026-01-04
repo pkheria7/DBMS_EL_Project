@@ -1,95 +1,65 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { 
+  ArrowLeft, 
   User, 
   Mail, 
-  BookOpen, 
-  Building,
-  LogOut, 
-  Edit, 
-  Users as UsersIcon,
+  Phone, 
+  Briefcase, 
+  Building2, 
   Hash,
-  GraduationCap,
-  Phone
+  Users,
+  BookOpen,
+  Award
 } from 'lucide-react';
 import client from '../api/client';
+import toast from 'react-hot-toast';
 
-const FacultyDashboard = () => {
+const FacultyDetails = () => {
   const navigate = useNavigate();
+  const { facultyId } = useParams();
   const [faculty, setFaculty] = useState(null);
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [teamsLoading, setTeamsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in and is faculty
-    const userType = localStorage.getItem('userType');
-    const userId = localStorage.getItem('userId');
-    
-    if (!userType || userType !== 'faculty') {
-      navigate('/login');
-      return;
-    }
+    fetchFacultyDetails();
+  }, [facultyId]);
 
-    // Fetch faculty details and teams
-    fetchFacultyDetails(userId);
-    fetchTeams(userId);
-  }, [navigate]);
-
-  const fetchFacultyDetails = async (userId) => {
+  const fetchFacultyDetails = async () => {
     try {
-      // Get user email from localStorage to find faculty
-      const user = JSON.parse(localStorage.getItem('user'));
+      // First, get all faculty and find the one with matching ID
+      const allFacultyResponse = await client.get('/faculty/');
+      const facultyList = allFacultyResponse.data || [];
+      const foundFaculty = facultyList.find(f => f.faculty_id === parseInt(facultyId));
       
-      // Use the search endpoint to find the faculty
-      const response = await client.get(`/faculty/search?query=${user.email}`);
-      if (response.data && response.data.length > 0) {
-        const facultyData = response.data.find(f => f.email === user.email);
-        setFaculty(facultyData || response.data[0]);
+      if (!foundFaculty) {
+        toast.error('Faculty not found');
+        setLoading(false);
+        return;
+      }
+      
+      setFaculty(foundFaculty);
+
+      // Fetch teams assigned to this faculty
+      try {
+        const teamsResponse = await client.get(`/faculty/${facultyId}/teams`);
+        setTeams(teamsResponse.data || []);
+      } catch (teamError) {
+        // If 404, no teams assigned yet
+        if (teamError.response?.status === 404) {
+          setTeams([]);
+        } else {
+          console.error('Error fetching teams:', teamError);
+          toast.error('Failed to load teams');
+        }
       }
     } catch (error) {
       console.error('Error fetching faculty details:', error);
-      // If search fails, try alternative approach
-      try {
-        const user = JSON.parse(localStorage.getItem('user'));
-        setFaculty({
-          faculty_id: userId,
-          name: user.name,
-          email: user.email,
-          department: 'Not specified'
-        });
-      } catch (err) {
-        console.error('Fallback failed:', err);
-      }
+      toast.error('Failed to load faculty details');
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchTeams = async (userId) => {
-    try {
-      const response = await client.get(`/faculty/${userId}/teams`);
-      setTeams(response.data || []);
-    } catch (error) {
-      console.error('Error fetching teams:', error);
-      if (error.response?.status === 404) {
-        // No teams found is not an error, just empty state
-        setTeams([]);
-      }
-    } finally {
-      setTeamsLoading(false);
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userType');
-    navigate('/login');
-  };
-
-  const handleUpdateProfile = () => {
-    navigate('/update-faculty-profile');
   };
 
   if (loading) {
@@ -103,51 +73,49 @@ const FacultyDashboard = () => {
   if (!faculty) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
-        <div className="text-white text-xl">Faculty not found</div>
+        <div className="text-center">
+          <div className="text-white text-xl mb-4">Faculty not found</div>
+          <button
+            onClick={() => navigate('/admin-dashboard')}
+            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all"
+          >
+            Back to Dashboard
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* Header with Logout and Update Profile */}
+      {/* Header */}
       <div className="bg-slate-800/50 border-b border-slate-700 px-6 py-4">
-        <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/admin-dashboard')}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all duration-200 border border-slate-600"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </button>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl flex items-center justify-center">
-              <GraduationCap className="w-7 h-7 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+              <User className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Faculty Dashboard</h1>
-              <p className="text-slate-400 text-sm">Welcome back, {faculty.name}!</p>
+              <h1 className="text-xl font-bold text-white">Faculty Details</h1>
+              <p className="text-slate-400 text-sm">{faculty.name}</p>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleUpdateProfile}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200"
-            >
-              <Edit className="w-4 h-4" />
-              <span>Update Profile</span>
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all duration-200"
-            >
-              <LogOut className="w-4 h-4" />
-              <span>Logout</span>
-            </button>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Faculty Details Card */}
+        {/* Faculty Information Card */}
         <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8 mb-8">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-            <User className="w-6 h-6 text-indigo-400" />
-            Personal Information
+            <User className="w-6 h-6 text-blue-400" />
+            Faculty Information
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -193,7 +161,7 @@ const FacultyDashboard = () => {
             {faculty.designation && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-slate-400 text-sm">
-                  <GraduationCap className="w-4 h-4" />
+                  <Briefcase className="w-4 h-4" />
                   <span>Designation</span>
                 </div>
                 <p className="text-white font-medium text-lg">{faculty.designation}</p>
@@ -204,7 +172,7 @@ const FacultyDashboard = () => {
             {faculty.dept_id && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-slate-400 text-sm">
-                  <Building className="w-4 h-4" />
+                  <Building2 className="w-4 h-4" />
                   <span>Department</span>
                 </div>
                 <p className="text-white font-medium text-lg">{faculty.dept_id}</p>
@@ -213,30 +181,25 @@ const FacultyDashboard = () => {
           </div>
         </div>
 
-        {/* Teams Card */}
+        {/* Assigned Teams & Projects Card */}
         <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-            <UsersIcon className="w-6 h-6 text-blue-400" />
-            Teams Under My Mentorship
+            <Users className="w-6 h-6 text-indigo-400" />
+            Assigned Teams & Projects
           </h2>
 
-          {teamsLoading ? (
+          {teams.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-slate-400 text-lg">Loading teams...</div>
-            </div>
-          ) : teams.length === 0 ? (
-            <div className="text-center py-12">
-              <UsersIcon className="w-16 h-16 text-slate-600 mx-auto mb-4" />
+              <Users className="w-16 h-16 text-slate-600 mx-auto mb-4" />
               <p className="text-slate-400 text-lg">No teams assigned yet</p>
-              <p className="text-slate-500 text-sm mt-2">Teams will appear here once assigned to you</p>
+              <p className="text-slate-500 text-sm mt-2">This faculty has not been assigned to any teams</p>
             </div>
           ) : (
             <div className="space-y-6">
               {teams.map((team) => (
                 <div 
                   key={team.team_id}
-                  onClick={() => navigate(`/team-review/${team.team_id}`)}
-                  className="bg-slate-700/50 rounded-xl border border-slate-600 p-6 hover:border-blue-500 hover:bg-slate-700 transition-all duration-200 cursor-pointer"
+                  className="bg-slate-700/50 rounded-xl border border-slate-600 p-6 hover:border-indigo-500 transition-all duration-200"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div>
@@ -255,7 +218,7 @@ const FacultyDashboard = () => {
                         </div>
                         {team.cluster && (
                           <div className="flex items-center gap-2">
-                            <Building className="w-4 h-4 text-slate-400" />
+                            <Building2 className="w-4 h-4 text-slate-400" />
                             <span className="text-slate-300 text-sm">Cluster: {team.cluster}</span>
                           </div>
                         )}
@@ -266,7 +229,7 @@ const FacultyDashboard = () => {
                   {/* Team Members */}
                   <div className="mb-4">
                     <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
-                      <UsersIcon className="w-4 h-4 text-blue-400" />
+                      <Users className="w-4 h-4 text-blue-400" />
                       Team Members ({team.members?.length || 0})
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -284,30 +247,55 @@ const FacultyDashboard = () => {
                   </div>
 
                   {/* Project Details - if available */}
-                  {team.project && (
+                  {team.project ? (
                     <div className="mt-4 pt-4 border-t border-slate-600">
                       <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
                         <BookOpen className="w-4 h-4 text-indigo-400" />
                         Project Details
                       </h4>
                       <div className="bg-slate-800 rounded-lg p-4 border border-slate-600">
-                        <p className="text-white font-medium mb-2">{team.project.title}</p>
-                        {team.project.domain && (
-                          <p className="text-slate-400 text-sm mb-2">Domain: {team.project.domain}</p>
-                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <p className="text-slate-400 text-sm mb-1">Project Title</p>
+                            <p className="text-white font-medium">{team.project.title}</p>
+                          </div>
+                          {team.project.domain && (
+                            <div>
+                              <p className="text-slate-400 text-sm mb-1">Domain</p>
+                              <p className="text-white font-medium">{team.project.domain}</p>
+                            </div>
+                          )}
+                        </div>
                         {team.project.abstract && (
-                          <p className="text-slate-300 text-sm mt-2">{team.project.abstract}</p>
+                          <div className="mb-4">
+                            <p className="text-slate-400 text-sm mb-1">Abstract</p>
+                            <p className="text-slate-300 text-sm">{team.project.abstract}</p>
+                          </div>
                         )}
-                        {team.project.marks && (
-                          <div className="mt-3">
-                            <span className="bg-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full text-sm font-medium">
-                              Marks: {team.project.marks}
-                            </span>
+                        {team.project.report_link && (
+                          <div className="mb-4">
+                            <p className="text-slate-400 text-sm mb-1">Drive Link</p>
+                            <a
+                              href={team.project.report_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm break-all"
+                            >
+                              <BookOpen className="w-4 h-4" />
+                              View Project Files
+                            </a>
+                          </div>
+                        )}
+                        {team.project.marks !== null && team.project.marks !== undefined && (
+                          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-600">
+                            <Award className="w-5 h-5 text-yellow-400" />
+                            <span className="text-slate-400 text-sm">Marks:</span>
+                            <span className="text-white font-bold text-lg">{team.project.marks} / 100</span>
                           </div>
                         )}
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -318,4 +306,4 @@ const FacultyDashboard = () => {
   );
 };
 
-export default FacultyDashboard;
+export default FacultyDetails;

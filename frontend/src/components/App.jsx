@@ -13,6 +13,8 @@ import UpdateProfile from '../pages/UpdateProfile';
 import UpdateFacultyProfile from '../pages/UpdateFacultyProfile';
 import TeamForm from '../pages/TeamForm';
 import TeamsList from '../pages/TeamsList';
+import TeamReview from '../pages/TeamReview';
+import FacultyDetails from '../pages/FacultyDetails';
 import SubmitProject from '../pages/SubmitProject';
 import ProjectsList from '../pages/ProjectsList';
 import ProjectDetails from '../pages/ProjectDetails';
@@ -36,6 +38,8 @@ const App = () => {
         <Route path="/update-faculty-profile" element={<UpdateFacultyProfile />} />
         <Route path="/form-team" element={<TeamForm />} />
         <Route path="/teams" element={<TeamsList />} />
+        <Route path="/team-review/:teamId" element={<TeamReview />} />
+        <Route path="/faculty-details/:facultyId" element={<FacultyDetails />} />
         <Route path="/submit-project" element={<SubmitProject />} />
         <Route path="/projects" element={<ProjectsList />} />
         <Route path="/projects/:id" element={<ProjectDetails />} />

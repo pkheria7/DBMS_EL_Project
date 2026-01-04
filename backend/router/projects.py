@@ -64,6 +64,7 @@ class ProjectResponse(BaseModel):
 
 class ArchiveResponse(BaseModel):
     archive_id: int
+    project_id: Optional[int]
     title: str
     sem: Optional[int]
     abstract: Optional[str]
@@ -96,6 +97,26 @@ def get_project(project_id: int, db: DB):
         raise HTTPException(
             status_code=404,
             detail=f"Project with id {project_id} not found."
+        )
+
+    return project
+
+
+# ============================================================================
+# GET PROJECT BY TEAM ID
+# ============================================================================
+
+@router.get("/team/{team_id}", response_model=ProjectResponse)
+def get_project_by_team(team_id: int, db: DB):
+
+    project = db.query(Project).filter(
+        Project.team_id == team_id
+    ).first()
+
+    if not project:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No project found for team {team_id}."
         )
 
     return project
@@ -244,6 +265,7 @@ def archive_project(project_id: int, db: DB):
 
     # Create snapshot archive
     new_archive = Archive(
+        project_id=project.project_id,
         title=project.title,
         sem=None,
         abstract=project.abstract,

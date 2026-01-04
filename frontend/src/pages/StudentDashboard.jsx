@@ -12,7 +12,11 @@ import {
   FolderKanban,
   Calendar,
   Award,
-  Archive
+  Archive,
+  Phone,
+  Github,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import client from '../api/client';
 
@@ -20,6 +24,8 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [teamProject, setTeamProject] = useState(null);
+  const [loadingProject, setLoadingProject] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in and is a student
@@ -42,7 +48,13 @@ const StudentDashboard = () => {
       if (response.data && response.data.length > 0) {
         // Find exact match
         const exactMatch = response.data.find(s => s.id === userId);
-        setStudent(exactMatch || response.data[0]);
+        const studentData = exactMatch || response.data[0];
+        setStudent(studentData);
+        
+        // Fetch team project if student is in a team
+        if (studentData.team_id) {
+          fetchTeamProject(studentData.team_id);
+        }
       } else {
         // Fallback: get user email and search all students
         const user = JSON.parse(localStorage.getItem('user'));
@@ -50,6 +62,11 @@ const StudentDashboard = () => {
         const studentData = allStudentsResponse.data.find(s => s.email === user.email);
         if (studentData) {
           setStudent(studentData);
+          
+          // Fetch team project if student is in a team
+          if (studentData.team_id) {
+            fetchTeamProject(studentData.team_id);
+          }
         }
       }
     } catch (error) {
@@ -61,12 +78,34 @@ const StudentDashboard = () => {
         const studentData = allStudentsResponse.data.find(s => s.email === user.email);
         if (studentData) {
           setStudent(studentData);
+          
+          // Fetch team project if student is in a team
+          if (studentData.team_id) {
+            fetchTeamProject(studentData.team_id);
+          }
         }
       } catch (err) {
         console.error('Error in fallback fetch:', err);
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchTeamProject = async (teamId) => {
+    setLoadingProject(true);
+    try {
+      const response = await client.get(`/projects/team/${teamId}`);
+      if (response.data) {
+        setTeamProject(response.data);
+      }
+    } catch (error) {
+      // If 404, project doesn't exist yet
+      if (error.response?.status !== 404) {
+        console.error('Error fetching team project:', error);
+      }
+    } finally {
+      setLoadingProject(false);
     }
   };
 
@@ -193,6 +232,56 @@ const StudentDashboard = () => {
               </div>
               <p className="text-white font-medium text-lg">{student.sem || 'N/A'}</p>
             </div>
+
+            {/* Phone Number */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-slate-400 text-sm">
+                <Phone className="w-4 h-4" />
+                <span>Phone Number</span>
+              </div>
+              <p className="text-white font-medium text-lg">{student.ph_no || 'N/A'}</p>
+            </div>
+
+            {/* GitHub */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-slate-400 text-sm">
+                <Github className="w-4 h-4" />
+                <span>GitHub</span>
+              </div>
+              {student.github ? (
+                <a
+                  href={student.github}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:text-blue-300 font-medium text-lg break-all hover:underline"
+                >
+                  {student.github}
+                </a>
+              ) : (
+                <p className="text-white font-medium text-lg">N/A</p>
+              )}
+            </div>
+
+            {/* Team Status */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-slate-400 text-sm">
+                <Users className="w-4 h-4" />
+                <span>Team Status</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {student.is_in_active_team || student.team_id ? (
+                  <>
+                    <CheckCircle className="w-5 h-5 text-green-400" />
+                    <span className="text-green-400 font-medium text-lg">In Active Team</span>
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-5 h-5 text-slate-400" />
+                    <span className="text-slate-400 font-medium text-lg">Not in a Team</span>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Skills */}
@@ -215,35 +304,22 @@ const StudentDashboard = () => {
             </div>
           )}
 
-          {/* Links */}
-          {(student.resumelink || student.githublink) && (
+          {/* Resume Link */}
+          {student.resume && (
             <div className="mt-6 pt-6 border-t border-slate-700">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {student.resumelink && (
-                  <a
-                    href={student.resumelink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-3 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-blue-400 hover:text-blue-300 transition-all"
-                  >
-                    <BookOpen className="w-4 h-4" />
-                    <span>View Resume</span>
-                  </a>
-                )}
-                {student.githublink && (
-                  <a
-                    href={student.githublink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-3 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-blue-400 hover:text-blue-300 transition-all"
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
-                    </svg>
-                    <span>View GitHub</span>
-                  </a>
-                )}
+              <div className="flex items-center gap-2 text-slate-400 text-sm mb-3">
+                <BookOpen className="w-4 h-4" />
+                <span>Resume</span>
               </div>
+              <a
+                href={student.resume}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-3 bg-slate-700 hover:bg-slate-600 border border-slate-600 rounded-lg text-blue-400 hover:text-blue-300 transition-all"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>View Resume</span>
+              </a>
             </div>
           )}
         </div>
@@ -264,19 +340,53 @@ const StudentDashboard = () => {
             </p>
           </button>
 
-          {/* Submit Projects Card */}
-          <button
-            onClick={() => navigate('/submit-project')}
-            className="bg-gradient-to-br from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 border border-slate-600 rounded-2xl p-8 text-left transition-all duration-300 hover:scale-105 hover:shadow-xl group"
-          >
-            <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-              <FolderKanban className="w-8 h-8 text-white" />
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-3">Submit Projects</h3>
-            <p className="text-slate-300 leading-relaxed">
-              Present your innovative ideas. Submit comprehensive project proposals with clear objectives and timelines.
-            </p>
-          </button>
+          {/* Submit/Review Project Cards - Conditional based on project status */}
+          {teamProject ? (
+            // Phase 1 submitted - Show two options
+            <>
+              {/* Review Phase 1 Submission */}
+              <button
+                onClick={() => navigate('/submit-project?mode=view')}
+                className="bg-gradient-to-br from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 border border-slate-600 rounded-2xl p-8 text-left transition-all duration-300 hover:scale-105 hover:shadow-xl group"
+              >
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Review Phase 1</h3>
+                <p className="text-slate-300 leading-relaxed">
+                  View your Phase 1 project submission with all the details and specifications.
+                </p>
+              </button>
+
+              {/* Submit Phase 2 Project */}
+              <button
+                onClick={() => navigate('/submit-project?mode=phase2')}
+                className="bg-gradient-to-br from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 border border-slate-600 rounded-2xl p-8 text-left transition-all duration-300 hover:scale-105 hover:shadow-xl group"
+              >
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <FolderKanban className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Submit Phase 2</h3>
+                <p className="text-slate-300 leading-relaxed">
+                  Upload your final project report, presentation, and complete documentation.
+                </p>
+              </button>
+            </>
+          ) : (
+            // No project yet - Show Phase 1 submission option
+            <button
+              onClick={() => navigate('/submit-project')}
+              className="bg-gradient-to-br from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 border border-slate-600 rounded-2xl p-8 text-left transition-all duration-300 hover:scale-105 hover:shadow-xl group"
+            >
+              <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <FolderKanban className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">Submit Projects</h3>
+              <p className="text-slate-300 leading-relaxed">
+                Present your innovative ideas. Submit comprehensive project proposals with clear objectives and timelines.
+              </p>
+            </button>
+          )}
 
           {/* Archives Card */}
           <button
