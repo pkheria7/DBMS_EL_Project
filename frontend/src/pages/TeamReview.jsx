@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import client from '../api/client';
 import toast from 'react-hot-toast';
+import SimilarProjects from '../components/SimilarProjects';
 
 const TeamReview = () => {
   const navigate = useNavigate();
@@ -277,6 +278,16 @@ const TeamReview = () => {
                 <div className="text-slate-400 text-sm">Abstract</div>
                 <p className="text-white">{project.abstract || 'No abstract provided'}</p>
               </div>
+
+              {/* Similar Projects - shown when title and abstract exist */}
+              {project.title && project.abstract && (
+                <div className="md:col-span-2">
+                  <SimilarProjects 
+                    title={project.title}
+                    abstract={project.abstract}
+                  />
+                </div>
+              )}
 
               <div className="md:col-span-2 space-y-2">
                 <div className="text-slate-400 text-sm">Drive Link (Report + PPT + Demo)</div>

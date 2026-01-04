@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 from database import SessionLocal
 from models import Project, Team, Archive
+from semantic_search import semantic_search
 import math
 
 router = APIRouter(prefix="/projects", tags=["projects"])
@@ -276,6 +277,17 @@ def archive_project(project_id: int, db: DB):
         db.add(new_archive)
         db.commit()
         db.refresh(new_archive)
+        
+        # Add to vector database for semantic search
+        try:
+            semantic_search.add_archive(
+                archive_id=new_archive.archive_id,
+                title=new_archive.title or "",
+                abstract=new_archive.abstract or ""
+            )
+        except Exception as ve:
+            print(f"Warning: Failed to add archive to vector database: {ve}")
+            
     except Exception as e:
         db.rollback()
         raise HTTPException(

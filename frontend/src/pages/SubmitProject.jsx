@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, FolderKanban } from 'lucide-react';
 import client from '../api/client';
 import toast from 'react-hot-toast';
+import SimilarProjects from '../components/SimilarProjects';
 
 const SubmitProject = () => {
   const navigate = useNavigate();
@@ -399,6 +400,16 @@ const SubmitProject = () => {
                 />
                 {errors.abstract && <div className="text-red-400 text-sm mt-1">{errors.abstract}</div>}
               </div>
+
+              {/* Similar Projects Component - shows for students editing and faculty reviewing */}
+              {formData.title && formData.abstract && (
+                <div className="md:col-span-2">
+                  <SimilarProjects 
+                    title={formData.title}
+                    abstract={formData.abstract}
+                  />
+                </div>
+              )}
 
               {/* Domain */}
               <div>

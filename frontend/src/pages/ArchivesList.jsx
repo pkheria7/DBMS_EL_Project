@@ -8,9 +8,11 @@ const ArchivesList = () => {
   const [archives, setArchives] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
-  const [filterDomain, setFilterDomain] = useState('');
-  const [filterYear, setFilterYear] = useState('');
+  const [searchTitle, setSearchTitle] = useState('');
+  const [searchDescription, setSearchDescription] = useState('');
   const [userType, setUserType] = useState('');
+  const [similarResults, setSimilarResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -25,6 +27,49 @@ const ArchivesList = () => {
   useEffect(() => {
     fetchArchives();
   }, []);
+
+  // Semantic search effect with debounce
+  useEffect(() => {
+    // If both inputs are empty, show all archives
+    if (!searchTitle.trim() && !searchDescription.trim()) {
+      setSimilarResults([]);
+      return;
+    }
+
+    // Debounce the search
+    const timeoutId = setTimeout(() => {
+      performSemanticSearch();
+    }, 800);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTitle, searchDescription]);
+
+  const performSemanticSearch = async () => {
+    if (!searchTitle.trim() && !searchDescription.trim()) {
+      setSimilarResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const params = { limit: 9 };
+      
+      if (searchTitle.trim()) {
+        params.title = searchTitle.trim();
+      }
+      if (searchDescription.trim()) {
+        params.abstract = searchDescription.trim();
+      }
+
+      const response = await client.get('/archives/similar', { params });
+      setSimilarResults(response.data || []);
+    } catch (error) {
+      console.error('Error performing semantic search:', error);
+      setSimilarResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const fetchArchives = async () => {
     try {
@@ -56,11 +101,9 @@ const ArchivesList = () => {
     }
   };
 
-  const filteredArchives = archives.filter(archive => {
-    const matchesTitle = !filterDomain || archive.title?.toLowerCase().includes(filterDomain.toLowerCase());
-    const matchesDomain = !filterYear || archive.project?.domain?.toLowerCase().includes(filterYear.toLowerCase());
-    return matchesTitle && matchesDomain;
-  });
+  // Determine which archives to display
+  const isSearchActive = searchTitle.trim() || searchDescription.trim();
+  const displayArchives = isSearchActive ? similarResults : archives;
 
   const handleBack = () => {
     if (userType === 'student') {
@@ -115,14 +158,14 @@ const ArchivesList = () => {
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
                 <Search className="w-4 h-4" />
-                Search Projects
+                Project Title
               </label>
               <div className="relative">
                 <input
                   type="text"
-                  value={filterDomain}
-                  onChange={(e) => setFilterDomain(e.target.value)}
-                  placeholder="Search by project title..."
+                  value={searchTitle}
+                  onChange={(e) => setSearchTitle(e.target.value)}
+                  placeholder="Enter project title..."
                   className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all text-base"
                 />
                 <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -132,20 +175,24 @@ const ArchivesList = () => {
             <div>
               <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
                 <Tag className="w-4 h-4" />
-                Filter by Domain
+                Project Description
               </label>
               <div className="relative">
-                <input
-                  type="text"
-                  value={filterYear}
-                  onChange={(e) => setFilterYear(e.target.value)}
-                  placeholder="e.g., AI/ML, Web Development, IoT"
-                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all text-base"
+                <textarea
+                  value={searchDescription}
+                  onChange={(e) => setSearchDescription(e.target.value)}
+                  placeholder="Describe the project idea or abstract..."
+                  rows={3}
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-all text-base resize-vertical"
                 />
-                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
               </div>
             </div>
           </div>
+          {isSearchActive && (
+            <div className="mt-4 text-center text-sm text-slate-400">
+              {isSearching ? 'Searching...' : 'Semantic search results based on similarity'}
+            </div>
+          )}
         </div>
 
         {/* Error Message */}
@@ -161,27 +208,37 @@ const ArchivesList = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
             <p className="text-white text-lg">Loading archives...</p>
           </div>
-        ) : filteredArchives.length === 0 ? (
+        ) : displayArchives.length === 0 ? (
           <div className="bg-slate-800 rounded-2xl border border-slate-700 p-12 text-center">
             <Archive className="w-16 h-16 text-slate-600 mx-auto mb-4" />
             <p className="text-slate-300 text-lg">
-              {archives.length === 0 ? 'No archived projects found.' : 'No archives match your filters.'}
+              {isSearchActive ? 'No similar projects found.' : 'No archived projects found.'}
             </p>
-            {archives.length > 0 && (
+            {isSearchActive && (
               <button
                 onClick={() => {
-                  setFilterDomain('');
-                  setFilterYear('');
+                  setSearchTitle('');
+                  setSearchDescription('');
                 }}
                 className="mt-4 px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all duration-200"
               >
-                Clear Filters
+                Clear Search
               </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredArchives.map((archive) => (
+          <>
+            {/* Results count message */}
+            {isSearchActive && (
+              <div className="mb-6 text-center">
+                <p className="text-slate-300 text-lg">
+                  Here are the <span className="font-semibold text-white">top results</span> we could find
+                </p>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {displayArchives.map((archive) => (
               <div
                 key={archive.archive_id}
                 className="group bg-slate-800 border border-slate-700 rounded-2xl p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-slate-600 cursor-pointer relative overflow-hidden"
@@ -231,6 +288,7 @@ const ArchivesList = () => {
               </div>
             ))}
           </div>
+          </>
         )}
       </div>
     </div>

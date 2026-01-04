@@ -13,4 +13,7 @@ scikit-learn
 requests
 pymongo
 python-dotenv
+qdrant-client
+sentence-transformers
+torch
 
