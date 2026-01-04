@@ -179,9 +179,9 @@ const styles = {
   container: {
     marginTop: '1.5rem',
     padding: '1rem',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#334155',
     borderRadius: '0.5rem',
-    border: '1px solid #E5E7EB',
+    border: '1px solid #475569',
   },
   header: {
     display: 'flex',
@@ -192,7 +192,7 @@ const styles = {
   title: {
     fontSize: '1rem',
     fontWeight: theme.font.weights.semibold,
-    color: theme.colors.text,
+    color: '#ffffff',
     fontFamily: theme.font.family,
     margin: 0,
     display: 'flex',
@@ -204,20 +204,21 @@ const styles = {
   },
   loadingText: {
     fontSize: '0.875rem',
-    color: '#6B7280',
+    color: '#cbd5e1',
     fontStyle: 'italic',
   },
   error: {
     padding: '0.75rem',
-    backgroundColor: '#FEF2F2',
-    color: '#DC2626',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    color: '#fca5a5',
     borderRadius: '0.375rem',
     fontSize: '0.875rem',
+    border: '1px solid rgba(239, 68, 68, 0.4)',
   },
   noResults: {
     textAlign: 'center',
     padding: '2rem 1rem',
-    color: '#6B7280',
+    color: '#cbd5e1',
   },
   noResultsIcon: {
     fontSize: '2rem',
@@ -226,7 +227,7 @@ const styles = {
   },
   description: {
     fontSize: '0.875rem',
-    color: '#6B7280',
+    color: '#e2e8f0',
     marginBottom: '1rem',
     lineHeight: '1.5',
   },
@@ -236,10 +237,10 @@ const styles = {
     gap: '0.75rem',
   },
   projectCard: {
-    backgroundColor: 'white',
+    backgroundColor: '#475569',
     padding: '1rem',
     borderRadius: '0.375rem',
-    border: '1px solid #E5E7EB',
+    border: '1px solid #64748b',
     transition: 'box-shadow 0.2s',
     cursor: 'default',
   },
@@ -256,7 +257,7 @@ const styles = {
   projectTitle: {
     fontSize: '0.9375rem',
     fontWeight: theme.font.weights.medium,
-    color: theme.colors.text,
+    color: '#ffffff',
     fontFamily: theme.font.family,
     margin: 0,
     flex: 1,
@@ -277,8 +278,8 @@ const styles = {
   semBadge: {
     display: 'inline-block',
     padding: '0.125rem 0.5rem',
-    backgroundColor: '#E0E7FF',
-    color: '#4F46E5',
+    backgroundColor: 'rgba(99, 102, 241, 0.3)',
+    color: '#c7d2fe',
     borderRadius: '0.25rem',
     fontSize: '0.75rem',
     fontWeight: theme.font.weights.medium,
@@ -286,8 +287,8 @@ const styles = {
   projectIdBadge: {
     display: 'inline-block',
     padding: '0.125rem 0.5rem',
-    backgroundColor: '#DBEAFE',
-    color: '#1E40AF',
+    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+    color: '#bfdbfe',
     borderRadius: '0.25rem',
     fontSize: '0.75rem',
     fontWeight: theme.font.weights.medium,
@@ -297,14 +298,14 @@ const styles = {
   },
   projectAbstract: {
     fontSize: '0.8125rem',
-    color: '#6B7280',
+    color: '#e2e8f0',
     lineHeight: '1.5',
     margin: 0,
     marginBottom: '0.5rem',
   },
   expandButton: {
     fontSize: '0.75rem',
-    color: theme.colors.primary,
+    color: '#60a5fa',
     backgroundColor: 'transparent',
     border: 'none',
     cursor: 'pointer',
@@ -315,14 +316,14 @@ const styles = {
   linkSection: {
     marginTop: '0.75rem',
     paddingTop: '0.75rem',
-    borderTop: '1px solid #E5E7EB',
+    borderTop: '1px solid #64748b',
   },
   reportLink: {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '0.25rem',
     fontSize: '0.8125rem',
-    color: theme.colors.primary,
+    color: '#60a5fa',
     textDecoration: 'none',
     fontWeight: theme.font.weights.medium,
     transition: 'color 0.2s',
