@@ -20,6 +20,8 @@ import ProjectsList from '../pages/ProjectsList';
 import ProjectDetails from '../pages/ProjectDetails';
 import ArchivesList from '../pages/ArchivesList';
 import ArchiveDetails from '../pages/ArchiveDetails';
+import StudentNotifications from '../pages/StudentNotifications';
+import FacultyNotifications from '../pages/FacultyNotifications';
 
 const App = () => {
   return (
@@ -45,6 +47,8 @@ const App = () => {
         <Route path="/projects/:id" element={<ProjectDetails />} />
         <Route path="/archives" element={<ArchivesList />} />
         <Route path="/archives/:id" element={<ArchiveDetails />} />
+        <Route path="/student-notifications" element={<StudentNotifications />} />
+        <Route path="/faculty-notifications" element={<FacultyNotifications />} />
       </Routes>
     </Router>
   );

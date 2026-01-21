@@ -46,6 +46,8 @@ class ProjectUpdate(BaseModel):
     abstract: Optional[str] = None
     domain: Optional[str] = None
     report_link: Optional[str] = None
+    phase1_marks: Optional[int] = None
+    phase2_marks: Optional[int] = None
     marks: Optional[int] = None
 
 
@@ -56,7 +58,9 @@ class ProjectResponse(BaseModel):
     abstract: Optional[str]
     domain: Optional[str]
     report_link: Optional[str]
-    marks: Optional[int]
+    phase1_marks: Optional[int]
+    phase2_marks: Optional[int]
+    marks: Optional[int]  # final_marks
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -299,7 +303,7 @@ def archive_project(project_id: int, db: DB):
 
 
 @router.put('/phase1/{project_id}', response_model=ProjectResponse)
-def get_phase1_project(project_id: int, marks : int,db: DB):
+def get_phase1_project(project_id: int, marks: int, db: DB):
 
     project = db.query(Project).filter(
         Project.project_id == project_id
@@ -311,7 +315,15 @@ def get_phase1_project(project_id: int, marks : int,db: DB):
             detail=f"Project with id {project_id} not found."
         )
     
-    project.marks = marks
+    # Set phase1_marks, default to 0 if not provided
+    project.phase1_marks = marks if marks is not None else 0
+    
+    # Calculate final_marks only if both phase1_marks and phase2_marks are provided
+    if project.phase1_marks > 0 and project.phase2_marks > 0:
+        project.marks = math.ceil(project.phase1_marks * 0.4 + project.phase2_marks * 0.6)
+    else:
+        project.marks = None  # Don't show final marks until both phases are graded
+    
     try:
         # Commit the changes to the database
         db.commit()
@@ -330,7 +342,7 @@ def get_phase1_project(project_id: int, marks : int,db: DB):
 
 
 @router.put('/phase2/{project_id}', response_model=ProjectResponse)
-def get_phase2_project(project_id: int, marks : int,db: DB):
+def get_phase2_project(project_id: int, marks: int, db: DB):
 
     project = db.query(Project).filter(
         Project.project_id == project_id
@@ -342,8 +354,15 @@ def get_phase2_project(project_id: int, marks : int,db: DB):
             detail=f"Project with id {project_id} not found."
         )
     
-    current_marks = project.marks if project.marks else 0
-    project.marks = math.ceil(current_marks * 0.4 + marks * 0.6)
+    # Set phase2_marks, default to 0 if not provided
+    project.phase2_marks = marks if marks is not None else 0
+    
+    # Calculate final_marks only if both phase1_marks and phase2_marks are provided
+    if project.phase1_marks > 0 and project.phase2_marks > 0:
+        project.marks = math.ceil(project.phase1_marks * 0.4 + project.phase2_marks * 0.6)
+    else:
+        project.marks = None  # Don't show final marks until both phases are graded
+    
     try:
         # Commit the changes to the database
         db.commit()

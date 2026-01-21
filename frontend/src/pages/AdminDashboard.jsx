@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, GraduationCap, LogOut, UserCheck, ArrowLeft, Mail, Phone, Briefcase, Building2, Search, X, Check, User } from 'lucide-react';
+import { Users, GraduationCap, LogOut, UserCheck, ArrowLeft, Mail, Phone, Briefcase, Building2, Search, X, Check, User, Bell, Send } from 'lucide-react';
 import client from '../api/client';
 import toast from 'react-hot-toast';
 
@@ -21,6 +21,12 @@ const AdminDashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFacultyIds, setSelectedFacultyIds] = useState([]);
   const [isAssigning, setIsAssigning] = useState(false);
+
+  // Notification modal state
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationTarget, setNotificationTarget] = useState('student');
+  const [isSendingNotification, setIsSendingNotification] = useState(false);
 
   // Check authentication on mount
   useEffect(() => {
@@ -228,6 +234,43 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleOpenNotifyModal = () => {
+    setShowNotifyModal(true);
+    setNotificationMessage('');
+    setNotificationTarget('student');
+  };
+
+  const handleCloseNotifyModal = () => {
+    setShowNotifyModal(false);
+    setNotificationMessage('');
+    setNotificationTarget('student');
+  };
+
+  const handleSendNotification = async () => {
+    if (!notificationMessage.trim()) {
+      toast.error('Please enter a notification message');
+      return;
+    }
+
+    setIsSendingNotification(true);
+    try {
+      const adminId = localStorage.getItem('userId') || 'admin';
+      await client.post('/notifications/', {
+        message: notificationMessage,
+        target_type: notificationTarget,
+        created_by: adminId
+      });
+
+      toast.success(`Notification sent to all ${notificationTarget}s successfully!`);
+      handleCloseNotifyModal();
+    } catch (error) {
+      console.error('Error sending notification:', error);
+      toast.error('Failed to send notification');
+    } finally {
+      setIsSendingNotification(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       {/* Header with Logout */}
@@ -278,7 +321,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Main Action Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
               {/* Faculty Card */}
               <button
                 onClick={handleViewFaculty}
@@ -311,6 +354,24 @@ const AdminDashboard = () => {
                 </p>
                 <div className="mt-6 flex items-center text-indigo-400 font-medium">
                   <span>View Teams</span>
+                  <ArrowLeft className="w-4 h-4 rotate-180 ml-2 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
+
+              {/* Notify Card */}
+              <button
+                onClick={handleOpenNotifyModal}
+                className="bg-gradient-to-br from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 border border-slate-600 rounded-2xl p-12 text-left transition-all duration-300 hover:scale-105 hover:shadow-xl group"
+              >
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Bell className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-3">Send Notifications</h3>
+                <p className="text-slate-300 leading-relaxed">
+                  Send announcements and notifications to students or faculty members.
+                </p>
+                <div className="mt-6 flex items-center text-green-400 font-medium">
+                  <span>Send Notification</span>
                   <ArrowLeft className="w-4 h-4 rotate-180 ml-2 group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
@@ -642,6 +703,126 @@ const AdminDashboard = () => {
                 `}
               >
                 {isAssigning ? 'Assigning...' : 'Assign Faculty'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification Modal */}
+      {showNotifyModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-2xl shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-slate-700">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                  <Bell className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Send Notification</h2>
+                  <p className="text-slate-400 text-sm mt-1">
+                    Send announcements to students or faculty
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCloseNotifyModal}
+                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              {/* Target Selection */}
+              <div>
+                <label className="block text-slate-300 font-medium mb-3">
+                  Send to:
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setNotificationTarget('student')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      notificationTarget === 'student'
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-slate-600 bg-slate-700/50 hover:border-slate-500'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <GraduationCap className={`w-6 h-6 ${
+                        notificationTarget === 'student' ? 'text-blue-400' : 'text-slate-400'
+                      }`} />
+                    </div>
+                    <div className={`font-medium ${
+                      notificationTarget === 'student' ? 'text-blue-400' : 'text-slate-300'
+                    }`}>
+                      Students
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setNotificationTarget('faculty')}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      notificationTarget === 'faculty'
+                        ? 'border-indigo-500 bg-indigo-500/10'
+                        : 'border-slate-600 bg-slate-700/50 hover:border-slate-500'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Users className={`w-6 h-6 ${
+                        notificationTarget === 'faculty' ? 'text-indigo-400' : 'text-slate-400'
+                      }`} />
+                    </div>
+                    <div className={`font-medium ${
+                      notificationTarget === 'faculty' ? 'text-indigo-400' : 'text-slate-300'
+                    }`}>
+                      Faculty
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Message Input */}
+              <div>
+                <label className="block text-slate-300 font-medium mb-3">
+                  Notification Message:
+                </label>
+                <textarea
+                  value={notificationMessage}
+                  onChange={(e) => setNotificationMessage(e.target.value)}
+                  placeholder="Enter your notification message here..."
+                  rows={6}
+                  className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                />
+                <p className="text-slate-400 text-sm mt-2">
+                  This message will be sent to all {notificationTarget}s
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-4 p-6 border-t border-slate-700">
+              <button
+                onClick={handleCloseNotifyModal}
+                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                disabled={isSendingNotification}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSendNotification}
+                disabled={!notificationMessage.trim() || isSendingNotification}
+                className={`
+                  flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-all
+                  ${!notificationMessage.trim() || isSendingNotification
+                    ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl'
+                  }
+                `}
+              >
+                <Send className="w-4 h-4" />
+                {isSendingNotification ? 'Sending...' : 'Send Notification'}
               </button>
             </div>
           </div>

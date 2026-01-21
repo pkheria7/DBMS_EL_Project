@@ -171,6 +171,36 @@ const ProjectDetails = () => {
                   </div>
                 )}
 
+                {project.phase1_marks !== undefined && project.phase1_marks !== null && (
+                  <div>
+                    <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+                      <Hash className="w-4 h-4" />
+                      <span>Phase 1 Marks</span>
+                    </div>
+                    <p className="text-white text-lg font-medium">{project.phase1_marks}</p>
+                  </div>
+                )}
+
+                {project.phase2_marks !== undefined && project.phase2_marks !== null && (
+                  <div>
+                    <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+                      <Hash className="w-4 h-4" />
+                      <span>Phase 2 Marks</span>
+                    </div>
+                    <p className="text-white text-lg font-medium">{project.phase2_marks}</p>
+                  </div>
+                )}
+
+                {project.marks !== undefined && project.marks !== null && (
+                  <div>
+                    <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+                      <Hash className="w-4 h-4" />
+                      <span>Final Marks</span>
+                    </div>
+                    <p className="text-white text-lg font-medium">{project.marks}</p>
+                  </div>
+                )}
+
                 {project.similarityscore !== undefined && project.similarityscore !== null && (
                   <div>
                     <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">

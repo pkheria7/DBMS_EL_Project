@@ -16,7 +16,9 @@ import {
   Phone,
   Github,
   CheckCircle,
-  XCircle
+  XCircle,
+  Bell,
+  ArrowLeft
 } from 'lucide-react';
 import client from '../api/client';
 
@@ -26,6 +28,8 @@ const StudentDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [teamProject, setTeamProject] = useState(null);
   const [loadingProject, setLoadingProject] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in and is a student
@@ -39,6 +43,9 @@ const StudentDashboard = () => {
 
     // Fetch student details
     fetchStudentDetails(userId);
+    
+    // Fetch notifications for students
+    fetchNotifications();
   }, [navigate]);
 
   const fetchStudentDetails = async (userId) => {
@@ -106,6 +113,19 @@ const StudentDashboard = () => {
       }
     } finally {
       setLoadingProject(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    setLoadingNotifications(true);
+    try {
+      const response = await client.get('/notifications/student');
+      setNotifications(response.data || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      setNotifications([]);
+    } finally {
+      setLoadingNotifications(false);
     }
   };
 
@@ -322,6 +342,40 @@ const StudentDashboard = () => {
               </a>
             </div>
           )}
+        </div>
+
+        {/* Notifications Card */}
+        <div 
+          onClick={() => navigate('/student-notifications')}
+          className="bg-slate-800 rounded-2xl border border-slate-700 p-8 mb-8 hover:border-green-500 transition-all duration-300 cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Bell className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-1 group-hover:text-green-400 transition-colors">Notifications</h2>
+                <p className="text-slate-400 text-sm">
+                  {loadingNotifications ? (
+                    'Loading...'
+                  ) : notifications.length === 0 ? (
+                    'No new notifications'
+                  ) : (
+                    `${notifications.length} notification${notifications.length !== 1 ? 's' : ''}`
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {!loadingNotifications && notifications.length > 0 && (
+                <div className="bg-green-500/20 border border-green-500 rounded-full px-4 py-2">
+                  <span className="text-green-400 font-semibold">{notifications.length}</span>
+                </div>
+              )}
+              <ArrowLeft className="w-5 h-5 text-slate-400 rotate-180 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
         </div>
 
         {/* Action Cards */}

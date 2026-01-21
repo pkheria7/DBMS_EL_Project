@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 import models
 from database import engine
-from router import student, faculty, teams, team_get, profile_update, projects, student_get, archives, auth, mentor
+from router import student, faculty, teams, team_get, profile_update, projects, student_get, archives, auth, mentor, notifications
 from fastapi.middleware.cors import CORSMiddleware
 
 # create app first
@@ -34,3 +34,4 @@ app.include_router(projects.router)
 app.include_router(student_get.router)
 app.include_router(archives.router)
 app.include_router(mentor.router)
+app.include_router(notifications.router)

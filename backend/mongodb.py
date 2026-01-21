@@ -59,11 +59,13 @@ db = client[DATABASE_NAME] if client is not None else None
 # Collections
 users_collection = db["users"] if db is not None else None
 resumes_collection = db["resumes"] if db is not None else None
+notifications_collection = db["notifications"] if db is not None else None
 
 # Note: Create indexes manually in MongoDB Atlas UI if needed
 # Users collection: Create unique index on "email" field
 # Users collection: Create index on "user_id" field  
 # Resumes collection: Create unique index on "student_id" field
+# Notifications collection: Create index on "target_type" field
 
 def get_users_collection():
     """Get users collection"""
@@ -76,3 +78,9 @@ def get_resumes_collection():
     if resumes_collection is None:
         raise Exception("MongoDB resumes collection is not available")
     return resumes_collection
+
+def get_notifications_collection():
+    """Get notifications collection"""
+    if notifications_collection is None:
+        raise Exception("MongoDB notifications collection is not available")
+    return notifications_collection

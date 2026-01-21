@@ -136,7 +136,9 @@ class Project(Base):
     abstract = Column(Text)
     domain = Column(String(100))
     report_link = Column(String(255))
-    marks = Column(Integer)
+    phase1_marks = Column(Integer, default=0)
+    phase2_marks = Column(Integer, default=0)
+    marks = Column(Integer)  # final_marks - kept for backward compatibility
 
     team_id = Column(Integer, ForeignKey("team.team_id"), unique=True)
 

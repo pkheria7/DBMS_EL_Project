@@ -10,7 +10,10 @@ import {
   Users as UsersIcon,
   Hash,
   GraduationCap,
-  Phone
+  Phone,
+  Bell,
+  Calendar,
+  ArrowLeft
 } from 'lucide-react';
 import client from '../api/client';
 
@@ -20,6 +23,8 @@ const FacultyDashboard = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [teamsLoading, setTeamsLoading] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in and is faculty
@@ -34,6 +39,9 @@ const FacultyDashboard = () => {
     // Fetch faculty details and teams
     fetchFacultyDetails(userId);
     fetchTeams(userId);
+    
+    // Fetch notifications for faculty
+    fetchNotifications();
   }, [navigate]);
 
   const fetchFacultyDetails = async (userId) => {
@@ -78,6 +86,19 @@ const FacultyDashboard = () => {
       }
     } finally {
       setTeamsLoading(false);
+    }
+  };
+
+  const fetchNotifications = async () => {
+    setLoadingNotifications(true);
+    try {
+      const response = await client.get('/notifications/faculty');
+      setNotifications(response.data || []);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      setNotifications([]);
+    } finally {
+      setLoadingNotifications(false);
     }
   };
 
@@ -213,6 +234,40 @@ const FacultyDashboard = () => {
           </div>
         </div>
 
+        {/* Notifications Card */}
+        <div 
+          onClick={() => navigate('/faculty-notifications')}
+          className="bg-slate-800 rounded-2xl border border-slate-700 p-8 mb-8 hover:border-green-500 transition-all duration-300 cursor-pointer group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Bell className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-1 group-hover:text-green-400 transition-colors">Notifications</h2>
+                <p className="text-slate-400 text-sm">
+                  {loadingNotifications ? (
+                    'Loading...'
+                  ) : notifications.length === 0 ? (
+                    'No new notifications'
+                  ) : (
+                    `${notifications.length} notification${notifications.length !== 1 ? 's' : ''}`
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {!loadingNotifications && notifications.length > 0 && (
+                <div className="bg-green-500/20 border border-green-500 rounded-full px-4 py-2">
+                  <span className="text-green-400 font-semibold">{notifications.length}</span>
+                </div>
+              )}
+              <ArrowLeft className="w-5 h-5 text-slate-400 rotate-180 group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+        </div>
+
         {/* Teams Card */}
         <div className="bg-slate-800 rounded-2xl border border-slate-700 p-8">
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
@@ -298,13 +353,23 @@ const FacultyDashboard = () => {
                         {team.project.abstract && (
                           <p className="text-slate-300 text-sm mt-2">{team.project.abstract}</p>
                         )}
-                        {team.project.marks && (
-                          <div className="mt-3">
-                            <span className="bg-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full text-sm font-medium">
-                              Marks: {team.project.marks}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {team.project.phase1_marks !== undefined && team.project.phase1_marks !== null && (
+                            <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-medium">
+                              Phase 1: {team.project.phase1_marks}
                             </span>
-                          </div>
-                        )}
+                          )}
+                          {team.project.phase2_marks !== undefined && team.project.phase2_marks !== null && (
+                            <span className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm font-medium">
+                              Phase 2: {team.project.phase2_marks}
+                            </span>
+                          )}
+                          {team.project.marks !== undefined && team.project.marks !== null && (
+                            <span className="bg-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full text-sm font-medium">
+                              Final: {team.project.marks}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
