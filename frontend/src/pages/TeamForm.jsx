@@ -34,10 +34,31 @@ const TeamForm = () => {
         const user = JSON.parse(localStorage.getItem('user'));
         const response = await client.get(`/students/search?query=${user.email}`);
         if (response.data && response.data.length > 0) {
-          const studentData = response.data.find(s => s.email === user.email);
-          setCurrentStudent(studentData || response.data[0]);
-          // Add current student as default member
-          setSelectedMembers([studentData || response.data[0]]);
+          const studentData = response.data.find(s => s.email === user.email) || response.data[0];
+          
+          // Try to fetch team information using student's USN
+          try {
+            const teamResponse = await client.get(`/teams/my-team?usn=${studentData.usn}`);
+            // API returns an array, get the first team
+            if (teamResponse.data && Array.isArray(teamResponse.data) && teamResponse.data.length > 0) {
+              const teamData = teamResponse.data[0];
+              studentData.team_id = teamData.team_id;
+              studentData.is_in_active_team = true;
+              studentData.team_name = teamData.team_name;
+              studentData.team_status = teamData.status;
+            }
+          } catch (teamError) {
+            // No team found or error fetching team (404 is expected if no team)
+            if (teamError.response?.status !== 404) {
+              console.error('Error fetching team:', teamError);
+            }
+          }
+          
+          setCurrentStudent(studentData);
+          // Add current student as default member only if they don't have a team
+          if (!studentData.team_id && !studentData.is_in_active_team) {
+            setSelectedMembers([studentData]);
+          }
         }
       } catch (error) {
         console.error('Error fetching current student:', error);
@@ -160,7 +181,17 @@ const TeamForm = () => {
       const response = await client.post('/teams/form', payload);
 
       if (response.status === 201) {
-        toast.success('Team created successfully');
+        // Update current student with team information
+        if (response.data && response.data.team_id) {
+          setCurrentStudent(prev => ({
+            ...prev,
+            team_id: response.data.team_id,
+            is_in_active_team: true
+          }));
+          toast.success(`Team created successfully! Team ID: ${response.data.team_id}`);
+        } else {
+          toast.success('Team created successfully');
+        }
         
         // Reset form
         setTeamName('');
@@ -171,7 +202,7 @@ const TeamForm = () => {
         // Redirect to student dashboard after a short delay
         setTimeout(() => {
           navigate('/student-dashboard');
-        }, 1000);
+        }, 1500);
       }
     } catch (error) {
       if (error.response?.status === 422) {

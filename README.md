@@ -44,7 +44,7 @@ A comprehensive full-stack application for managing student teams, faculty assig
 ### Frontend
 - **React 18** - UI library
 - **Vite** - Build tool and dev server
-- **React Router DOM** - Client-side routing
+- **React Router DOM v7** - Client-side routing
 - **Axios** - HTTP client
 - **Tailwind CSS** - Utility-first CSS framework
 - **React Hot Toast** - Toast notifications
@@ -98,7 +98,7 @@ pip install -r requirements.txt
 - `fastapi` - Web framework
 - `uvicorn[standard]` - ASGI server
 - `sqlalchemy` - ORM
-- `pydantic` - Data validation
+- `pydantic` - Data validation (with email support)
 - `pymongo` - MongoDB driver
 - `qdrant-client` - Vector database client
 - `sentence-transformers` - AI embeddings
@@ -106,6 +106,12 @@ pip install -r requirements.txt
 - `passlib[bcrypt]` - Password hashing
 - `python-multipart` - Form data handling
 - `python-dotenv` - Environment variables
+- `email-validator` - Email validation
+- `jinja2` - Template engine
+- `psycopg2-binary` - PostgreSQL adapter
+- `numpy` - Numerical computing
+- `scikit-learn` - Machine learning utilities
+- `requests` - HTTP library
 
 ### 3. Frontend Setup
 
@@ -282,22 +288,34 @@ DBMS_EL_Project/
 │   ├── router/                 # API route handlers
 │   │   ├── auth.py            # Authentication endpoints
 │   │   ├── student.py         # Student CRUD operations
+│   │   ├── student_get.py     # Student retrieval endpoints
 │   │   ├── faculty.py         # Faculty operations
+│   │   ├── mentor.py          # Mentor assignment
 │   │   ├── teams.py           # Team creation/management
+│   │   ├── team_get.py        # Team retrieval endpoints
 │   │   ├── projects.py        # Project submission/review
 │   │   ├── archives.py        # Archive browsing & search
 │   │   ├── notifications.py   # Notification system
-│   │   └── ...
+│   │   ├── profile_update.py  # Profile update endpoints
+│   │   └── __init__.py
 │   │
-│   ├── seed_*.py              # Database seeding scripts
-│   ├── migrate_*.py           # Database migration scripts
+│   ├── seed_dept.py           # Seed departments
+│   ├── seed_faculty.py        # Seed faculty members
+│   ├── seed_students.py       # Seed students
+│   ├── seed_mentor.py         # Seed mentors
+│   ├── seed_teams.py          # Seed teams
+│   ├── seed_project.py        # Seed projects
+│   ├── migrate_add_project_id.py   # Migration: add project IDs
+│   ├── migrate_phase_marks.py      # Migration: phase marks
 │   ├── WHOLE_INFO.db          # SQLite database (auto-generated)
-│   └── qdrant_data/           # Qdrant vector storage (auto-generated)
+│   ├── qdrant_data/           # Qdrant vector storage (auto-generated)
+│   └── venv/                  # Virtual environment (if created)
 │
 └── frontend/
     ├── src/
     │   ├── main.jsx           # React application entry
     │   ├── index.css          # Global styles
+    │   ├── theme.js           # Theme configuration
     │   │
     │   ├── components/
     │   │   ├── App.jsx        # Main app component with routing
@@ -315,11 +333,17 @@ DBMS_EL_Project/
     │   │   ├── AdminDashboard.jsx    # Admin panel
     │   │   ├── TeamForm.jsx          # Create team
     │   │   ├── TeamsList.jsx         # View teams
+    │   │   ├── TeamReview.jsx        # Review teams
     │   │   ├── SubmitProject.jsx     # Project submission
     │   │   ├── ProjectsList.jsx      # Browse projects
+    │   │   ├── ProjectDetails.jsx    # Project details
     │   │   ├── ArchivesList.jsx      # Browse archives
     │   │   ├── ArchiveDetails.jsx    # Archive details + similar projects
-    │   │   └── ...
+    │   │   ├── FacultyDetails.jsx    # Faculty details page
+    │   │   ├── FacultyNotifications.jsx    # Faculty notifications
+    │   │   ├── StudentNotifications.jsx    # Student notifications
+    │   │   ├── UpdateProfile.jsx     # Update student profile
+    │   │   └── UpdateFacultyProfile.jsx    # Update faculty profile
     │   │
     │   └── api/
     │       └── client.js      # Axios HTTP client configuration
@@ -341,42 +365,55 @@ Once the backend is running, visit these URLs for interactive API documentation:
 ### Main API Endpoints
 
 #### Authentication
-- `POST /register/student` - Register a new student
-- `POST /register/faculty` - Register a new faculty member
-- `POST /login` - User login
-- `POST /logout` - User logout
+- `POST /students/register` - Register a new student
+- `POST /faculty/register` - Register a new faculty member
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user info
 
 #### Students
 - `GET /students` - Get all students
 - `GET /students/{id}` - Get student by ID
-- `PUT /students/{id}` - Update student
-- `DELETE /students/{id}` - Delete student
+- `POST /students/create` - Create a new student
+- `GET /students/dept/{dept_id}` - Get students by department
 
 #### Faculty
 - `GET /faculty` - Get all faculty
-- `GET /faculty/{id}` - Get faculty by ID
-- `POST /faculty/assign-mentor` - Assign mentor to team
+- `POST /faculty/create` - Create a new faculty member
+- `GET /faculty/all` - Get all faculty with details
+- `GET /faculty/dept/{dept_id}` - Get faculty by department
 
 #### Teams
-- `POST /teams` - Create a team
+- `POST /teams/create` - Create a team
 - `GET /teams` - Get all teams
-- `GET /teams/{id}` - Get team by ID
-- `PUT /teams/{id}` - Update team
+- `GET /teams/my-team` - Get current user's team
+
+#### Mentors
+- `POST /mentors/assign` - Assign mentors to a team
 
 #### Projects
-- `POST /projects` - Submit a project
+- `POST /projects/submit` - Submit a project
 - `GET /projects` - Get all projects
-- `GET /projects/{id}` - Get project by ID
-- `PUT /projects/{id}/review` - Review a project
+- `GET /projects/{project_id}` - Get project by ID
+- `GET /projects/team/{team_id}` - Get project by team ID
+- `PUT /projects/{project_id}` - Update a project
+- `DELETE /projects/{project_id}` - Delete a project
+- `POST /projects/{project_id}/archive` - Archive a project
+- `PUT /projects/phase1/{project_id}` - Review project phase 1
+- `PUT /projects/phase2/{project_id}` - Review project phase 2
 
 #### Archives
 - `GET /archives` - Get all archived projects
-- `GET /archives/{id}` - Get archive details
-- `GET /archives/{id}/similar` - Find similar projects (semantic search)
+- `GET /archives/{archive_id}` - Get archive details
+- `GET /archives/similar` - Find similar projects (semantic search with query param)
 
 #### Notifications
-- `GET /notifications/student/{id}` - Get student notifications
-- `GET /notifications/faculty/{id}` - Get faculty notifications
+- `POST /notifications` - Create a notification (admin only)
+- `GET /notifications/{target_type}` - Get notifications by target type (student/faculty)
+- `DELETE /notifications/{notification_id}` - Delete a notification
+
+#### Profile Updates
+- `PUT /profiles/students/{usn}` - Update student profile
+- `PUT /profiles/faculty/{faculty_id}` - Update faculty profile
 
 ## 🔄 Workflow
 
