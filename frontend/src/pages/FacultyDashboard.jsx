@@ -16,6 +16,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import client from '../api/client';
+import { useNotifications } from '../hooks/useNotifications';
 
 const FacultyDashboard = () => {
   const navigate = useNavigate();
@@ -23,25 +24,20 @@ const FacultyDashboard = () => {
   const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(true);
   const [teamsLoading, setTeamsLoading] = useState(true);
-  const [notifications, setNotifications] = useState([]);
-  const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  const userType = localStorage.getItem('userType');
+  const { notifications, count: notifCount, loading: loadingNotifications } = useNotifications(userType);
 
   useEffect(() => {
-    // Check if user is logged in and is faculty
-    const userType = localStorage.getItem('userType');
     const userId = localStorage.getItem('userId');
-    
+
     if (!userType || userType !== 'faculty') {
       navigate('/login');
       return;
     }
 
-    // Fetch faculty details and teams
     fetchFacultyDetails(userId);
     fetchTeams(userId);
-    
-    // Fetch notifications for faculty
-    fetchNotifications();
   }, [navigate]);
 
   const fetchFacultyDetails = async (userId) => {
@@ -86,19 +82,6 @@ const FacultyDashboard = () => {
       }
     } finally {
       setTeamsLoading(false);
-    }
-  };
-
-  const fetchNotifications = async () => {
-    setLoadingNotifications(true);
-    try {
-      const response = await client.get('/notifications/faculty');
-      setNotifications(response.data || []);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      setNotifications([]);
-    } finally {
-      setLoadingNotifications(false);
     }
   };
 
@@ -249,18 +232,18 @@ const FacultyDashboard = () => {
                 <p className="text-slate-400 text-sm">
                   {loadingNotifications ? (
                     'Loading...'
-                  ) : notifications.length === 0 ? (
+                  ) : notifCount === 0 ? (
                     'No new notifications'
                   ) : (
-                    `${notifications.length} notification${notifications.length !== 1 ? 's' : ''}`
+                    `${notifCount} notification${notifCount !== 1 ? 's' : ''}`
                   )}
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              {!loadingNotifications && notifications.length > 0 && (
+              {!loadingNotifications && notifCount > 0 && (
                 <div className="bg-green-500/20 border border-green-500 rounded-full px-4 py-2">
-                  <span className="text-green-400 font-semibold">{notifications.length}</span>
+                  <span className="text-green-400 font-semibold">{notifCount}</span>
                 </div>
               )}
               <ArrowLeft className="w-5 h-5 text-slate-400 rotate-180 group-hover:translate-x-1 transition-transform" />

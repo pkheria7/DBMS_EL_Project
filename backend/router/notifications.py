@@ -1,10 +1,11 @@
 # router/notifications.py
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 from mongodb import get_notifications_collection
 from bson import ObjectId
+from auth_utils import get_current_user, require_faculty
 
 router = APIRouter(
     prefix="/notifications",
@@ -29,7 +30,7 @@ class NotificationResponse(BaseModel):
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_notification(notification: NotificationCreate):
+async def create_notification(notification: NotificationCreate, _=Depends(require_faculty)):
     """
     Create a new notification for students or faculty.
     Only admin should be able to call this endpoint.
@@ -73,7 +74,7 @@ async def create_notification(notification: NotificationCreate):
 
 
 @router.get("/{target_type}", response_model=List[NotificationResponse])
-async def get_notifications(target_type: str):
+async def get_notifications(target_type: str, _=Depends(get_current_user)):
     """
     Get all notifications for a specific user type (student or faculty).
     Returns notifications in reverse chronological order (newest first).
@@ -116,7 +117,7 @@ async def get_notifications(target_type: str):
 
 
 @router.delete("/{notification_id}")
-async def delete_notification(notification_id: str):
+async def delete_notification(notification_id: str, _=Depends(require_faculty)):
     """
     Delete a notification by ID.
     Only admin should be able to call this endpoint.

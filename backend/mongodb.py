@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
 import os
+import certifi
 from dotenv import load_dotenv
 from urllib.parse import quote_plus
 
@@ -43,12 +44,11 @@ if "mongodb+srv://" in MONGODB_URL:
         print(f"Warning: Could not parse MongoDB URL: {e}")
         pass  # If parsing fails, use the URL as-is
 
-# Initialize MongoDB client
+# Initialize MongoDB client — tlsCAFile=certifi fixes SSL on Python 3.14
 try:
-    client = MongoClient(MONGODB_URL)
-    # Test the connection
+    client = MongoClient(MONGODB_URL, tlsCAFile=certifi.where())
     client.admin.command('ping')
-    print(f"✓ Successfully connected to MongoDB at {MONGODB_URL}")
+    print(f"✓ Successfully connected to MongoDB")
 except ConnectionFailure as e:
     print(f"✗ Failed to connect to MongoDB: {e}")
     client = None
@@ -60,6 +60,7 @@ db = client[DATABASE_NAME] if client is not None else None
 users_collection = db["users"] if db is not None else None
 resumes_collection = db["resumes"] if db is not None else None
 notifications_collection = db["notifications"] if db is not None else None
+team_invites_collection = db["team_invites"] if db is not None else None
 
 # Note: Create indexes manually in MongoDB Atlas UI if needed
 # Users collection: Create unique index on "email" field
@@ -84,3 +85,9 @@ def get_notifications_collection():
     if notifications_collection is None:
         raise Exception("MongoDB notifications collection is not available")
     return notifications_collection
+
+def get_team_invites_collection():
+    """Get team_invites collection"""
+    if team_invites_collection is None:
+        raise Exception("MongoDB team_invites collection is not available")
+    return team_invites_collection

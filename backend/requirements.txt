@@ -8,12 +8,13 @@ passlib[bcrypt]
 email-validator
 jinja2
 psycopg2-binary
-numpy
-scikit-learn
 requests
 pymongo
 python-dotenv
 qdrant-client
-sentence-transformers
-torch
 
+python-jose[cryptography]
+resend
+cloudinary
+redis
+slowapi

@@ -178,40 +178,21 @@ const TeamForm = () => {
         member_usns: selectedMembers.map(m => m.usn),
       };
 
-      const response = await client.post('/teams/form', payload);
+      const response = await client.post('/teams/invite', payload);
 
       if (response.status === 201) {
-        // Update current student with team information
-        if (response.data && response.data.team_id) {
-          setCurrentStudent(prev => ({
-            ...prev,
-            team_id: response.data.team_id,
-            is_in_active_team: true
-          }));
-          toast.success(`Team created successfully! Team ID: ${response.data.team_id}`);
-        } else {
-          toast.success('Team created successfully');
-        }
-        
-        // Reset form
+        toast.success('Invites sent! Waiting for members to accept.');
         setTeamName('');
         setSelectedMembers([]);
         setSearchQuery('');
         setSearchResults([]);
-        
-        // Redirect to student dashboard after a short delay
-        setTimeout(() => {
-          navigate('/student-dashboard');
-        }, 1500);
+        setTimeout(() => navigate('/student-dashboard'), 1200);
       }
     } catch (error) {
-      if (error.response?.status === 422) {
-        const errorMessage = error.response.data?.detail || 'Validation error';
-        toast.error(errorMessage);
-      } else if (error.response?.data?.detail) {
+      if (error.response?.data?.detail) {
         toast.error(error.response.data.detail);
       } else {
-        toast.error('Failed to create team. Please try again.');
+        toast.error('Failed to send invites. Please try again.');
       }
     } finally {
       setIsSubmitting(false);

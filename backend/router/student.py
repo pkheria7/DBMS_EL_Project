@@ -10,6 +10,8 @@ from datetime import datetime
 from database import SessionLocal
 from models import Student, Team
 from mongodb import get_users_collection, get_resumes_collection
+from auth_utils import get_current_user
+from cache import cache_get, cache_set, cache_delete
 
 router = APIRouter(prefix="/students", tags=["students"])
 
@@ -131,30 +133,35 @@ def register_student(payload: StudentCreate, db: DB):
         db.refresh(new_student)
     except Exception as e:
         db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail="Database error while creating student."
-        ) from e
+        raise HTTPException(status_code=500, detail="Database error while creating student.") from e
 
-    # Store auth credentials in MongoDB
-    users_col.insert_one({
-        "user_id": payload.usn,
-        "email": payload.email,
-        "name": payload.name,
-        "password": hashed_password,
-        "user_type": "student",
-        "created_at": datetime.utcnow()
-    })
-
-    # Store resume link separately (MongoDB)
-    if payload.resume:
-        resumes_col = get_resumes_collection()
-        resumes_col.insert_one({
-            "usn": payload.usn,
-            "resume_link": payload.resume,
-            "uploaded_at": datetime.utcnow()
+    # MongoDB write — compensate by rolling back Postgres row if it fails
+    try:
+        users_col.insert_one({
+            "user_id": payload.usn,
+            "email": payload.email,
+            "name": payload.name,
+            "password": hashed_password,
+            "user_type": "student",
+            "created_at": datetime.utcnow(),
         })
+    except Exception as e:
+        db.delete(new_student)
+        db.commit()
+        raise HTTPException(status_code=500, detail="Registration failed. Please retry.") from e
 
+    if payload.resume:
+        try:
+            resumes_col = get_resumes_collection()
+            resumes_col.insert_one({
+                "usn": payload.usn,
+                "resume_link": payload.resume,
+                "uploaded_at": datetime.utcnow(),
+            })
+        except Exception:
+            pass  # resume storage is non-critical, don't fail registration
+
+    cache_delete("students:all")
     return new_student
 
 
@@ -177,7 +184,10 @@ VALID_CLUSTERS = {"CSE", "ECE", "ME", "CV"}
 # ============================================================================
 
 @router.get("/", response_model=List[StudentOut])
-def get_all_students(db: DB):
+def get_all_students(db: DB, _=Depends(get_current_user)):
+    cached = cache_get("students:all")
+    if cached is not None:
+        return cached
 
     students = db.query(Student).all()
 
@@ -188,14 +198,13 @@ def get_all_students(db: DB):
 
     result = []
     for stu in students:
-        # Derive cluster from dept_id
         cluster = None
         if stu.dept_id:
             if stu.dept_id in VALID_CLUSTERS:
                 cluster = stu.dept_id
             else:
                 cluster = CLUSTER_PARENT_MAP.get(stu.dept_id)
-        
+
         result.append(
             StudentOut(
                 usn=stu.usn,
@@ -208,9 +217,10 @@ def get_all_students(db: DB):
                 resume=stu.resume,
                 cluster=cluster,
                 is_in_active_team=stu.team_id in active_team_ids
-            )
+            ).model_dump()
         )
 
+    cache_set("students:all", result, 60)
     return result
 
 @router.post(
@@ -220,7 +230,8 @@ def get_all_students(db: DB):
 )
 def get_students_without_team(
     payload: NoteamStudentSearch,
-    db: DB
+    db: DB,
+    _=Depends(get_current_user),
 ):
 
     # Fetch students without a team
@@ -272,7 +283,7 @@ def get_students_without_team(
     response_model=List[StudentOut],
     summary="Search students by USN, name, or email"
 )
-def search_students(query: str, db: DB):
+def search_students(query: str, db: DB, _=Depends(get_current_user)):
 
     q = f"%{query.strip().lower()}%"
 

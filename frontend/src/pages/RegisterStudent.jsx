@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { GraduationCap, AlertCircle, CheckCircle, Lock } from 'lucide-react';
 import client from '../api/client';
 import Navbar from '../components/Navbar';
+import FileUploadButton from '../components/FileUploadButton';
 
 const RegisterStudent = () => {
   const [formData, setFormData] = useState({
@@ -298,10 +299,10 @@ const RegisterStudent = () => {
               )}
             </div>
 
-            {/* Resume Link */}
+            {/* Resume */}
             <div>
               <label htmlFor="resume" className="block mb-1 text-sm font-medium text-slate-300">
-                Resume Link <span className="text-slate-400 text-xs">(Optional)</span>
+                Resume <span className="text-slate-400 text-xs">(Optional)</span>
               </label>
               <input
                 type="url"
@@ -309,10 +310,14 @@ const RegisterStudent = () => {
                 name="resume"
                 value={formData.resume}
                 onChange={handleChange}
-                placeholder="https://..."
+                placeholder="Paste URL or upload below"
                 className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                   errors.resume ? 'border-red-500' : 'border-slate-600'
                 }`}
+              />
+              <FileUploadButton
+                label="Upload Resume (PDF / DOCX)"
+                onUpload={(url) => setFormData(prev => ({ ...prev, resume: url }))}
               />
               {errors.resume && (
                 <div className="text-red-300 text-xs mt-1">{errors.resume}</div>

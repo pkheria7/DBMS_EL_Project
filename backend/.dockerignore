@@ -1,0 +1,17 @@
+.env
+__pycache__
+**/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.git
+.gitignore
+
+# Local data files — not needed in prod
+qdrant_data/
+WHOLE_INFO.db
+
+# Seed / migration scripts — run locally, not in the container
+seed_*.py
+migrate_*.py

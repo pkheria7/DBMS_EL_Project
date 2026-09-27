@@ -6,7 +6,10 @@ from sqlalchemy import (
     Integer,
     ForeignKey,
     Text,
-    Table
+    Table,
+    DateTime,
+    Boolean,
+    Index,
 )
 from sqlalchemy.orm import relationship
 from database import Base
@@ -87,6 +90,12 @@ class Student(Base):
     team = relationship("Team", back_populates="students")
     skills = relationship("Skill", back_populates="student", cascade="all, delete")
 
+    __table_args__ = (
+        Index("ix_student_name", "name"),
+        Index("ix_student_dept_sem", "dept_id", "sem"),
+        Index("ix_student_team_id", "team_id"),
+    )
+
 
 class Skill(Base):
     __tablename__ = "skills"
@@ -127,6 +136,11 @@ class Faculty(Base):
         back_populates="mentors",
     )
 
+    __table_args__ = (
+        Index("ix_faculty_name", "name"),
+        Index("ix_faculty_designation", "designation"),
+    )
+
 
 class Project(Base):
     __tablename__ = "project"
@@ -139,6 +153,15 @@ class Project(Base):
     phase1_marks = Column(Integer, default=0)
     phase2_marks = Column(Integer, default=0)
     marks = Column(Integer)  # final_marks - kept for backward compatibility
+
+    # Feature A: Deadline management
+    phase1_deadline = Column(DateTime, nullable=True)
+    phase2_deadline = Column(DateTime, nullable=True)
+    is_locked = Column(Boolean, default=False, nullable=False)
+
+    # Feature B: Faculty feedback
+    phase1_feedback = Column(Text, nullable=True)
+    phase2_feedback = Column(Text, nullable=True)
 
     team_id = Column(Integer, ForeignKey("team.team_id"), unique=True)
 

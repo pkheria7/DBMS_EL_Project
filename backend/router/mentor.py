@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from database import SessionLocal
 from models import Team, Faculty, mentors_table
+from auth_utils import require_faculty
 
 router = APIRouter(prefix="/mentors", tags=["mentors"])
 
@@ -47,7 +48,7 @@ class MentorAssignRequest(BaseModel):
     "/assign",
     status_code=status.HTTP_201_CREATED
 )
-def assign_mentors(payload: MentorAssignRequest, db: DB):
+def assign_mentors(payload: MentorAssignRequest, db: DB, _=Depends(require_faculty)):
     """
     Assign exactly 2 faculty mentors to a team using team_name and faculty names.
     """

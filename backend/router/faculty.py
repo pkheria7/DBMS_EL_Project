@@ -10,6 +10,8 @@ from datetime import datetime
 from database import SessionLocal
 from models import Faculty , mentors_table , Team, Student
 from mongodb import get_users_collection
+from auth_utils import get_current_user
+from cache import cache_get, cache_set, cache_delete
 
 router = APIRouter(prefix="/faculty", tags=["faculty"])
 
@@ -95,9 +97,14 @@ class TeamOut(BaseModel):
     "/",
     response_model=List[FacultySearchOut]
 )
-def get_all_faculty(db: db_dependency):
+def get_all_faculty(db: db_dependency, _=Depends(get_current_user)):
+    cached = cache_get("faculty:all")
+    if cached is not None:
+        return cached
     faculty_list = db.query(Faculty).all()
-    return faculty_list
+    result = [FacultySearchOut.model_validate(f).model_dump() for f in faculty_list]
+    cache_set("faculty:all", result, 120)
+    return result
 
 # ============================================================================
 # REGISTER FACULTY
@@ -149,21 +156,24 @@ def register_faculty(payload: FacultyCreate, db: db_dependency):
         db.refresh(new_faculty)
     except Exception as e:
         db.rollback()
-        raise HTTPException(
-            status_code=500,
-            detail="Error while creating faculty record."
-        ) from e
+        raise HTTPException(status_code=500, detail="Error while creating faculty record.") from e
 
-    # Store credentials in MongoDB
-    users_col.insert_one({
-        "user_id": new_faculty.faculty_id,
-        "email": payload.email,
-        "name": payload.name,
-        "password": hashed_password,
-        "user_type": "faculty",
-        "created_at": datetime.utcnow()
-    })
+    # MongoDB write — compensate by rolling back Postgres row if it fails
+    try:
+        users_col.insert_one({
+            "user_id": new_faculty.faculty_id,
+            "email": payload.email,
+            "name": payload.name,
+            "password": hashed_password,
+            "user_type": "faculty",
+            "created_at": datetime.utcnow(),
+        })
+    except Exception as e:
+        db.delete(new_faculty)
+        db.commit()
+        raise HTTPException(status_code=500, detail="Registration failed. Please retry.") from e
 
+    cache_delete("faculty:all")
     return new_faculty
 
 
@@ -175,7 +185,7 @@ def register_faculty(payload: FacultyCreate, db: db_dependency):
     "/search",
     response_model=List[FacultySearchOut]
 )
-def search_faculty(query: str, db: db_dependency):
+def search_faculty(query: str, db: db_dependency, _=Depends(get_current_user)):
     """
     Search faculty by:
     - name
@@ -207,7 +217,7 @@ def search_faculty(query: str, db: db_dependency):
     "/{faculty_id}/teams",
     response_model=List[TeamOut]
 )
-def get_all_teams(faculty_id: int, db: db_dependency):
+def get_all_teams(faculty_id: int, db: db_dependency, _=Depends(get_current_user)):
     teamids = db.query(mentors_table.c.team_id).filter(
         mentors_table.c.faculty_id == faculty_id
     ).all()

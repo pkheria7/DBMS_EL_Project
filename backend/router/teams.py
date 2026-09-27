@@ -7,6 +7,8 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 from database import SessionLocal
 from models import Student, Team
+from auth_utils import get_current_user
+from cache import cache_delete
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
@@ -86,7 +88,7 @@ def parent_cluster(dept_id: str) -> str | None:
     response_model=TeamOut,
     status_code=status.HTTP_201_CREATED
 )
-def form_team(payload: TeamCreate, db: DB):
+def form_team(payload: TeamCreate, db: DB, _=Depends(get_current_user)):
 
     member_usns = payload.member_usns
 
@@ -158,6 +160,7 @@ def form_team(payload: TeamCreate, db: DB):
             detail="Database error while creating team."
         ) from e
 
+    cache_delete("teams:all", "students:all")
     return TeamOut(
         team_id=new_team.team_id,
         team_name=new_team.team_name,

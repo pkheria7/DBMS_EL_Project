@@ -8,6 +8,8 @@ from pydantic import BaseModel, ConfigDict
 from database import SessionLocal
 from models import Archive
 from semantic_search import semantic_search
+from auth_utils import get_current_user
+from cache import cache_get, cache_set
 
 router = APIRouter(prefix="/archives", tags=["archives"])
 
@@ -62,8 +64,14 @@ class SimilarArchiveResponse(BaseModel):
 # ============================================================================
 
 @router.get("/", response_model=List[ArchiveResponse])
-def get_all_archives(db: DB):
-    return db.query(Archive).all()
+def get_all_archives(db: DB, _=Depends(get_current_user)):
+    cached = cache_get("archives:all")
+    if cached is not None:
+        return cached
+    archives = db.query(Archive).all()
+    result = [ArchiveResponse.model_validate(a).model_dump() for a in archives]
+    cache_set("archives:all", result, 120)
+    return result
 
 
 # ============================================================================
@@ -76,6 +84,7 @@ def search_similar_archives(
     title: Optional[str] = Query(None, description="Title to search for"),
     abstract: Optional[str] = Query(None, description="Abstract to search for"),
     limit: int = Query(9, ge=1, le=9, description="Maximum number of results"),
+    _=Depends(get_current_user),
 ):
     """
     Search for similar archives based on title and/or abstract.
@@ -137,7 +146,7 @@ def search_similar_archives(
 # ============================================================================
 
 @router.get("/{archive_id}", response_model=ArchiveResponse)
-def get_archive(archive_id: int, db: DB):
+def get_archive(archive_id: int, db: DB, _=Depends(get_current_user)):
 
     archive = db.query(Archive).filter(
         Archive.archive_id == archive_id

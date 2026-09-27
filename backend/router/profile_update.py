@@ -7,6 +7,8 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 from database import SessionLocal
 from models import Student, Faculty
+from auth_utils import get_current_user
+from cache import cache_delete
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -82,7 +84,9 @@ class FacultyResponse(BaseModel):
 # ============================================================================
 
 @router.put("/students/{usn}", response_model=StudentResponse)
-def update_student(usn: str, payload: StudentUpdate, db: DB):
+def update_student(usn: str, payload: StudentUpdate, db: DB, user: dict = Depends(get_current_user)):
+    if user.get("user_type") == "student" and user.get("email") != db.query(Student).filter(Student.usn == usn).first().email:
+        raise HTTPException(status_code=403, detail="You can only edit your own profile.")
 
     student = db.query(Student).filter(Student.usn == usn).first()
     if not student:
@@ -118,6 +122,7 @@ def update_student(usn: str, payload: StudentUpdate, db: DB):
             detail="Database error while updating student."
         ) from e
 
+    cache_delete("students:all")
     return student
 
 
@@ -126,7 +131,9 @@ def update_student(usn: str, payload: StudentUpdate, db: DB):
 # ============================================================================
 
 @router.put("/faculty/{faculty_id}", response_model=FacultyResponse)
-def update_faculty(faculty_id: int, payload: FacultyUpdate, db: DB):
+def update_faculty(faculty_id: int, payload: FacultyUpdate, db: DB, user: dict = Depends(get_current_user)):
+    if user.get("user_type") == "faculty" and user.get("email") != db.query(Faculty).filter(Faculty.faculty_id == faculty_id).first().email:
+        raise HTTPException(status_code=403, detail="You can only edit your own profile.")
 
     faculty = db.query(Faculty).filter(
         Faculty.faculty_id == faculty_id
@@ -161,4 +168,5 @@ def update_faculty(faculty_id: int, payload: FacultyUpdate, db: DB):
             detail="Database error while updating faculty."
         ) from e
 
+    cache_delete("faculty:all")
     return faculty

@@ -5,6 +5,7 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 
 from database import SessionLocal
 from models import Student
+from auth_utils import get_current_user
 
 router = APIRouter(prefix="/students", tags=["students"])
 
@@ -64,7 +65,7 @@ class StudentSearchOut(BaseModel):
     response_model=List[StudentSearchOut],
     summary="Search students by USN, name, or email"
 )
-def search_students(query: str, db: Session = Depends(get_db)):
+def search_students(query: str, db: Session = Depends(get_db), _=Depends(get_current_user)):
 
     q = f"%{query.strip().lower()}%"
 

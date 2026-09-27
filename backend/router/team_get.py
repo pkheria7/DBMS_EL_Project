@@ -7,6 +7,8 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 
 from database import SessionLocal
 from models import Team, Student
+from auth_utils import get_current_user
+from cache import cache_get, cache_set
 
 router = APIRouter(prefix="/teams", tags=["teams"])
 
@@ -66,7 +68,10 @@ class TeamOut(BaseModel):
 # ============================================================================
 
 @router.get("/", response_model=List[TeamOut])
-def get_all_teams(db: DB):
+def get_all_teams(db: DB, _=Depends(get_current_user)):
+    cached = cache_get("teams:all")
+    if cached is not None:
+        return cached
 
     teams = db.query(Team).all()
     result = []
@@ -76,18 +81,13 @@ def get_all_teams(db: DB):
             Student.team_id == team.team_id
         ).all()
 
-        # Derive cluster from members' dept_id
-        # All members should be in the same cluster (validation rule)
         cluster = None
         if members:
-            # Get the first member's dept_id to determine cluster
             first_dept_id = members[0].dept_id
             if first_dept_id:
                 if first_dept_id in VALID_CLUSTERS:
-                    # dept_id is already a cluster name
                     cluster = first_dept_id
                 else:
-                    # Look up branch code in mapping
                     cluster = CLUSTER_PARENT_MAP.get(first_dept_id)
 
         result.append(
@@ -97,9 +97,10 @@ def get_all_teams(db: DB):
                 status=team.status,
                 cluster=cluster,
                 members=members
-            )
+            ).model_dump()
         )
 
+    cache_set("teams:all", result, 60)
     return result
 
 
@@ -108,7 +109,7 @@ def get_all_teams(db: DB):
 # ============================================================================
 
 @router.get("/my-team", response_model=List[TeamOut])
-def get_student_team(usn: str, db: DB):
+def get_student_team(usn: str, db: DB, _=Depends(get_current_user)):
     """
     Get the team that a student belongs to.
     Returns ONLY the student's team. Returns empty list if student has no team.
