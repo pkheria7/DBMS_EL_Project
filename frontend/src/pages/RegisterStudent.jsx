@@ -238,17 +238,40 @@ const RegisterStudent = () => {
               <label htmlFor="dept_id" className="block mb-1 text-sm font-medium text-slate-300">
                 Department
               </label>
-              <input
-                type="text"
+              <select
                 id="dept_id"
                 name="dept_id"
                 value={formData.dept_id}
                 onChange={handleChange}
-                placeholder="e.g., CSE"
-                className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
+                className={`w-full px-3 py-2 rounded-md bg-slate-700 border text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${
                   errors.dept_id ? 'border-red-500' : 'border-slate-600'
                 }`}
-              />
+              >
+                <option value="">Select Department</option>
+                <optgroup label="CSE Cluster">
+                  <option value="AI">AI — Artificial Intelligence & ML</option>
+                  <option value="CD">CD — Computer Science & Design</option>
+                  <option value="CS">CS — Computer Science & Engineering</option>
+                  <option value="CY">CY — Cyber Security</option>
+                  <option value="IS">IS — Information Science & Engineering</option>
+                </optgroup>
+                <optgroup label="ECE Cluster">
+                  <option value="EC">EC — Electronics & Communication</option>
+                  <option value="EE">EE — Electrical & Electronics</option>
+                  <option value="EI">EI — Electronics & Instrumentation</option>
+                  <option value="ET">ET — Electronics & Telecommunication</option>
+                </optgroup>
+                <optgroup label="ME Cluster">
+                  <option value="AS">AS — Aerospace Engineering</option>
+                  <option value="IM">IM — Industrial Engineering & Management</option>
+                  <option value="ME">ME — Mechanical Engineering</option>
+                </optgroup>
+                <optgroup label="CV Cluster">
+                  <option value="CV">CV — Civil Engineering</option>
+                  <option value="BT">BT — Biotechnology</option>
+                  <option value="CH">CH — Chemical Engineering</option>
+                </optgroup>
+              </select>
               {errors.dept_id && (
                 <div className="text-red-300 text-xs mt-1">{errors.dept_id}</div>
               )}
