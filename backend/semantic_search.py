@@ -18,8 +18,15 @@ VECTOR_SIZE = 384
 
 class SemanticSearch:
     def __init__(self):
-        storage_path = os.path.join(os.path.dirname(__file__), "qdrant_data")
-        self.client = QdrantClient(path=storage_path)
+        qdrant_url = os.getenv("QDRANT_URL")
+        qdrant_api_key = os.getenv("QDRANT_API_KEY")
+
+        if qdrant_url and qdrant_api_key:
+            self.client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key)
+        else:
+            storage_path = os.path.join(os.path.dirname(__file__), "qdrant_data")
+            self.client = QdrantClient(path=storage_path)
+
         self.collection_name = "archives"
         self._ensure_collection()
 
