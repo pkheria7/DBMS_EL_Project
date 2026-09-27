@@ -19,10 +19,14 @@ app.add_middleware(SlowAPIMiddleware)
 # add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],           # allow all origins (React frontend)
+    allow_origins=[
+        "https://dbms-el-project.vercel.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
-    allow_methods=["*"],           # allows GET, POST, PUT, DELETE, OPTIONS
-    allow_headers=["*"],           # allows JSON and custom headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # create database tables
